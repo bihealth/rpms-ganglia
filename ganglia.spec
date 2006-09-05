@@ -1,15 +1,15 @@
-Name:		ganglia
-Version:	3.0.3
-Release:	7%{?dist}
-Summary:	Ganglia Distributed Monitoring System
+Name:               ganglia
+Version:            3.0.3
+Release:            10%{?dist}
+Summary:            Ganglia Distributed Monitoring System
 
-Group:		Applications/Internet
-License:	BSD
-URL:		http://ganglia.sourceforge.net/
-Source0:	http://dl.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
-Buildroot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Group:              Applications/Internet
+License:            BSD
+URL:                http://ganglia.sourceforge.net/
+Source0:            http://dl.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
+Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:	rrdtool-devel
+BuildRequires:      rrdtool-devel
 
 %description
 Ganglia is a scalable, real-time monitoring and execution environment
@@ -17,10 +17,10 @@ with all execution requests and statistics expressed in an open
 well-defined XML format.
 
 %package web
-Summary:	Ganglia Web Frontend
-Group:		Applications/Internet
-Requires:	rrdtool
-Requires:	%{name}-gmetad >=  3.0.3
+Summary:            Ganglia Web Frontend
+Group:              Applications/Internet
+Requires:           rrdtool, php
+Requires:           %{name}-gmetad = %{version}-%{release}
 
 %description web
 This package provides a web frontend to display the XML tree published by
@@ -28,8 +28,11 @@ ganglia, and to provide historical graphs of collected metrics. This website is
 written in the PHP4 language.
 
 %package gmetad
-Summary:	Ganglia Metadata collection daemon
-Group:		Applications/Internet
+Summary:            Ganglia Metadata collection daemon
+Group:              Applications/Internet
+Requires(post):     /sbin/chkconfig
+Requires(preun):    /sbin/chkconfig
+Requires(preun):    /sbin/service
 
 %description gmetad
 Ganglia is a scalable, real-time monitoring and execution environment
@@ -40,8 +43,11 @@ This gmetad daemon aggregates monitoring data from several clusters
 to form a monitoring grid. It also keeps metric history using rrdtool.
 
 %package gmond
-Summary:	Ganglia Monitoring daemon
-Group:		Applications/Internet
+Summary:            Ganglia Monitoring daemon
+Group:              Applications/Internet
+Requires(post):     /sbin/chkconfig
+Requires(preun):    /sbin/chkconfig
+Requires(preun):    /sbin/service
 
 %description gmond
 Ganglia is a scalable, real-time monitoring and execution environment
@@ -52,8 +58,8 @@ This gmond daemon provides the ganglia service within a single cluster or
 Multicast domain.
 
 %package devel
-Summary:	Ganglia Library http://ganglia.sourceforge.net/
-Group:		Applications/Internet
+Summary:            Ganglia Library
+Group:              Applications/Internet
 
 %description devel
 The Ganglia Monitoring Core library provides a set of functions that
@@ -61,19 +67,16 @@ programmers can use to build scalable cluster or grid applications
 
 %prep 
 %setup -q
-# Hey, those shouldn't be executable...
+## Hey, those shouldn't be executable...
 chmod -x lib/{net,rdwr,hash,llist}.h \
     srclib/libmetrics/linux/fsusage.h \
     srclib/libmetrics/error.c
 
 %build
 %configure \
-    --prefix=/usr \
-    --libdir=%{_libdir} \
     --with-gmetad \
-    --with-shared \
-    LDFLAGS="-L%{_libdir}"
-    ### Build currently fails if enabled
+    --with-shared
+## Build currently fails if enabled
     #--disable-static \
 
 ## Default to run as user ganglia instead of nobody
@@ -130,7 +133,7 @@ rm -f $RPM_BUILD_ROOT%{_datadir}/{Makefile.am,version.php.in}
 rm -rf $RPM_BUILD_ROOT
 
 %pre gmetad
-# Add the "ganglia" user
+## Add the "ganglia" user
 /usr/sbin/useradd -c "Ganglia Monitoring System" \
         -s /sbin/nologin -r -d %{_localstatedir}/lib/%{name} ganglia 2> /dev/null || :
 
@@ -143,24 +146,14 @@ rm -rf $RPM_BUILD_ROOT
 %preun gmetad
 if [ "$1" = 0 ]
 then
-  # No conditional stop provided. :(
-  /sbin/service gmetad status
-  if [ "$?" -eq 0 ]
-  then
-    /sbin/service gmetad stop
-  fi
+  /sbin/service gmetad stop >/dev/null 2>&1 || :
   /sbin/chkconfig --del gmetad
 fi
 
 %preun gmond
 if [ "$1" = 0 ]
 then
-  # No conditional stop provided. :(
-  /sbin/service gmond status
-  if [ "$?" -eq 0 ]
-  then
-    /sbin/service gmond stop
-  fi
+  /sbin/service gmond stop >/dev/null 2>&1 || :
   /sbin/chkconfig --del gmond
 fi
 
@@ -204,6 +197,18 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Tue Sep 05 2006 Jarod Wilson <jwilson@redhat.com> 3.0.3-10
+- Rebuild for new glibc
+
+* Fri Jul 28 2006 Jarod Wilson <jwilson@redhat.com> 3.0.3-9
+- Add missing Reqs on chkconfig and service
+- Make %%preun sections match Fedora Extras standards
+- Minor %%configure tweak
+
+* Tue Jul 11 2006 Jarod Wilson <jwilson@redhat.com> 3.0.3-8
+- Add missing php req for ganglia-web
+- Misc tiny spec cleanups
+
 * Tue Jun 13 2006 Jarod Wilson <jwilson@redhat.com> 3.0.3-7
 - Clean up documentation
 
