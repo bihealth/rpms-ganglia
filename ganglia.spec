@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.0.3
-Release:            10%{?dist}
+Release:            11%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -132,7 +132,16 @@ rm -f $RPM_BUILD_ROOT%{_datadir}/{Makefile.am,version.php.in}
 %clean
 rm -rf $RPM_BUILD_ROOT
 
+### Both gmetad and gmond require user ganglia, but monitored
+### nodes only need gmond, servers only need gmetad... So have
+### both packages try to add the user (second one should just
+### fail silently).
 %pre gmetad
+## Add the "ganglia" user
+/usr/sbin/useradd -c "Ganglia Monitoring System" \
+        -s /sbin/nologin -r -d %{_localstatedir}/lib/%{name} ganglia 2> /dev/null || :
+
+%pre gmond
 ## Add the "ganglia" user
 /usr/sbin/useradd -c "Ganglia Monitoring System" \
         -s /sbin/nologin -r -d %{_localstatedir}/lib/%{name} ganglia 2> /dev/null || :
@@ -197,6 +206,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Thu Nov 09 2006 Jarod Wilson <jwilson@redhat.com> 3.0.3-11
+- gmond also needs ganglia user (#214762)
+
 * Tue Sep 05 2006 Jarod Wilson <jwilson@redhat.com> 3.0.3-10
 - Rebuild for new glibc
 
