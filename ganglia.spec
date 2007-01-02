@@ -1,6 +1,6 @@
 Name:               ganglia
-Version:            3.0.3
-Release:            11%{?dist}
+Version:            3.0.4
+Release:            1%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -69,8 +69,9 @@ programmers can use to build scalable cluster or grid applications
 %setup -q
 ## Hey, those shouldn't be executable...
 chmod -x lib/{net,rdwr,hash,llist}.h \
-    srclib/libmetrics/linux/fsusage.h \
-    srclib/libmetrics/error.c
+    libmetrics/linux/fsusage.h \
+    libmetrics/error.c \
+    libmetrics/debug_msg.h
 
 %build
 %configure \
@@ -206,6 +207,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Tue Jan 02 2007 Jarod Wilson <jwilson@redhat.com> 3.0.4-1
+- New upstream release
+
 * Thu Nov 09 2006 Jarod Wilson <jwilson@redhat.com> 3.0.3-11
 - gmond also needs ganglia user (#214762)
 
