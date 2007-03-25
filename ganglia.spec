@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.0.4
-Release:            1%{?dist}
+Release:            2%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -173,6 +173,7 @@ fi
 
 %files gmetad
 %defattr(-,root,root,-)
+%dir %{_localstatedir}/lib/%{name}
 %attr(0755,ganglia,ganglia) %{_localstatedir}/lib/%{name}/rrds
 %{_sbindir}/gmetad
 %{_mandir}/man1/gmetad.1*
@@ -202,11 +203,15 @@ fi
 %files web
 %defattr(-,root,root,-)
 %doc web/AUTHORS web/COPYING web/ChangeLog
+%dir %{_sysconfdir}/%{name}
 %config(noreplace) %{_sysconfdir}/%{name}/conf.php
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %{_datadir}/%{name}
 
 %changelog
+* Sat Mar 24 2007 Jarod Wilson <jwilson@redhat.com> 3.0.4-2
+- Own created directories (#233790)
+
 * Tue Jan 02 2007 Jarod Wilson <jwilson@redhat.com> 3.0.4-1
 - New upstream release
 
