@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.0.4
-Release:            2%{?dist}
+Release:            3%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -19,7 +19,7 @@ well-defined XML format.
 %package web
 Summary:            Ganglia Web Frontend
 Group:              Applications/Internet
-Requires:           rrdtool, php
+Requires:           rrdtool, php, php-gd
 Requires:           %{name}-gmetad = %{version}-%{release}
 
 %description web
@@ -209,6 +209,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Fri May 18 2007 Jarod Wilson <jwilson@redhat.com> 3.0.4-3
+- Add missing Req: php-gd so people will see nifty pie charts
+
 * Sat Mar 24 2007 Jarod Wilson <jwilson@redhat.com> 3.0.4-2
 - Own created directories (#233790)
 
