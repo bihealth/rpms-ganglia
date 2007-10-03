@@ -1,6 +1,6 @@
 Name:               ganglia
-Version:            3.0.4
-Release:            3%{?dist}
+Version:            3.0.5
+Release:            1%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -68,10 +68,7 @@ programmers can use to build scalable cluster or grid applications
 %prep 
 %setup -q
 ## Hey, those shouldn't be executable...
-chmod -x lib/{net,rdwr,hash,llist}.h \
-    libmetrics/linux/fsusage.h \
-    libmetrics/error.c \
-    libmetrics/debug_msg.h
+chmod -x lib/*.{h,x}
 
 %build
 %configure \
@@ -209,6 +206,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Wed Oct 03 2007 Jarod Wilson <jwilson@redhat.com> 3.0.5-1
+- New upstream release
+
 * Fri May 18 2007 Jarod Wilson <jwilson@redhat.com> 3.0.4-3
 - Add missing Req: php-gd so people will see nifty pie charts
 
