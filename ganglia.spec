@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.0.5
-Release:            1%{?dist}
+Release:            2%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -30,6 +30,7 @@ written in the PHP4 language.
 %package gmetad
 Summary:            Ganglia Metadata collection daemon
 Group:              Applications/Internet
+Requires:           %{name} = %{version}-%{release}
 Requires(post):     /sbin/chkconfig
 Requires(preun):    /sbin/chkconfig
 Requires(preun):    /sbin/service
@@ -45,6 +46,7 @@ to form a monitoring grid. It also keeps metric history using rrdtool.
 %package gmond
 Summary:            Ganglia Monitoring daemon
 Group:              Applications/Internet
+Requires:           %{name} = %{version}-%{release}
 Requires(post):     /sbin/chkconfig
 Requires(preun):    /sbin/chkconfig
 Requires(preun):    /sbin/service
@@ -60,6 +62,7 @@ Multicast domain.
 %package devel
 Summary:            Ganglia Library
 Group:              Applications/Internet
+Requires:           %{name} = %{version}-%{release}
 
 %description devel
 The Ganglia Monitoring Core library provides a set of functions that
@@ -130,16 +133,7 @@ rm -f $RPM_BUILD_ROOT%{_datadir}/{Makefile.am,version.php.in}
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-### Both gmetad and gmond require user ganglia, but monitored
-### nodes only need gmond, servers only need gmetad... So have
-### both packages try to add the user (second one should just
-### fail silently).
-%pre gmetad
-## Add the "ganglia" user
-/usr/sbin/useradd -c "Ganglia Monitoring System" \
-        -s /sbin/nologin -r -d %{_localstatedir}/lib/%{name} ganglia 2> /dev/null || :
-
-%pre gmond
+%pre
 ## Add the "ganglia" user
 /usr/sbin/useradd -c "Ganglia Monitoring System" \
         -s /sbin/nologin -r -d %{_localstatedir}/lib/%{name} ganglia 2> /dev/null || :
@@ -168,6 +162,13 @@ fi
 
 %postun devel -p /sbin/ldconfig
 
+
+%files
+%defattr(-,root,root,-)
+%doc AUTHORS COPYING NEWS README ChangeLog
+%{_libdir}/libganglia*.so.*
+%{_bindir}/ganglia-config
+
 %files gmetad
 %defattr(-,root,root,-)
 %dir %{_localstatedir}/lib/%{name}
@@ -179,7 +180,6 @@ fi
 
 %files gmond
 %defattr(-,root,root,-)
-%doc AUTHORS COPYING NEWS README ChangeLog
 %{_bindir}/gmetric
 %{_bindir}/gstat
 %{_sbindir}/gmond
@@ -193,8 +193,7 @@ fi
 %files devel
 %defattr(-,root,root,-)
 %{_includedir}/ganglia.h
-%{_libdir}/libganglia*.so*
-%{_bindir}/ganglia-config
+%{_libdir}/libganglia*.so
 %exclude %{_libdir}/libganglia.a
 
 %files web
@@ -206,6 +205,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Wed Oct 24 2007 Jarod Wilson <jwilson@redhat.com> 3.0.5-2
+- Reorg packages to fix multilib conflicts (#341201)
+
 * Wed Oct 03 2007 Jarod Wilson <jwilson@redhat.com> 3.0.5-1
 - New upstream release
 
