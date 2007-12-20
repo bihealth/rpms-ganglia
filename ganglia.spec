@@ -207,7 +207,7 @@ fi
 %changelog
 * Mon Dec 17 2007 Jarod Wilson <jwilson@redhat.com> 3.0.6-1
 - New upstream release (security fix for web frontend
-  cross-scripting vulnerability)
+  cross-scripting vulnerability) {CVE-2007-6465}
 
 * Wed Oct 24 2007 Jarod Wilson <jwilson@redhat.com> 3.0.5-2
 - Reorg packages to fix multilib conflicts (#341201)
