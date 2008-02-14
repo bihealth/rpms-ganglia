@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.0.6
-Release:            1%{?dist}
+Release:            2%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -205,6 +205,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Thu Feb 14 2008 Jarod Wilson <jwilson@redhat.com> 3.0.6-2
+- Bump and rebuild with gcc 4.3
+
 * Mon Dec 17 2007 Jarod Wilson <jwilson@redhat.com> 3.0.6-1
 - New upstream release (security fix for web frontend
   cross-scripting vulnerability) {CVE-2007-6465}
