@@ -1,6 +1,6 @@
 Name:               ganglia
-Version:            3.0.6
-Release:            2%{?dist}
+Version:            3.0.7
+Release:            1%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -205,6 +205,12 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Wed Feb 27 2008 Jarod Wilson <jwilson@redhat.com> 3.0.7-1
+- New upstream release
+- Fixes "Show Hosts" toggle
+- Fixes to host view metric graphs
+- Fixes two memory leaks
+
 * Thu Feb 14 2008 Jarod Wilson <jwilson@redhat.com> 3.0.6-2
 - Bump and rebuild with gcc 4.3
 
