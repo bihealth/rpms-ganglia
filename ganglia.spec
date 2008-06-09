@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.0.7
-Release:            1%{?dist}
+Release:            2%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -205,6 +205,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Mon Jun 09 2008 Jarod Wilson <jwilson@redhat.com> 3.0.7-2
+- Bump and rebuild against latest rrdtool
+
 * Wed Feb 27 2008 Jarod Wilson <jwilson@redhat.com> 3.0.7-1
 - New upstream release
 - Fixes "Show Hosts" toggle
