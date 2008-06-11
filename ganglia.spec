@@ -1,15 +1,21 @@
+%define svnrev 1399
+
 Name:               ganglia
-Version:            3.0.7
-Release:            2%{?dist}
+Version:            3.1.0
+Release:            0.1%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
-Source0:            http://dl.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
+Source0:            http://www.ganglia.info/snapshots/3.1.x/%{name}-%{version}.%{svnrev}.tar.gz
+#Source0:            http://dl.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
 Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:      rrdtool-devel
+BuildRequires:      rrdtool-devel, apr-devel >= 1
+BuildRequires:      libpng-devel, libart_lgpl-devel
+BuildRequires:      libconfuse-devel, expat-devel
+BuildRequires:      python-devel, freetype-devel
 
 %description
 Ganglia is a scalable, real-time monitoring and execution environment
@@ -59,6 +65,19 @@ well-defined XML format.
 This gmond daemon provides the ganglia service within a single cluster or
 Multicast domain.
 
+%package gmond-python
+Summary:            Ganglia Monitor daemon python DSO and metric modules
+Group:              Applications/Internet
+Requires:           ganglia-gmond, python
+
+%description gmond-python
+Ganglia is a scalable, real-time monitoring and execution environment
+with all execution requests and statistics expressed in an open
+well-defined XML format.
+
+This package provides the gmond python DSO and python gmond modules, which
+can be loaded via the DSO at gmond daemon start time.
+
 %package devel
 Summary:            Ganglia Library
 Group:              Applications/Internet
@@ -68,17 +87,16 @@ Requires:           %{name} = %{version}-%{release}
 The Ganglia Monitoring Core library provides a set of functions that
 programmers can use to build scalable cluster or grid applications
 
-%prep 
-%setup -q
+%prep
+%setup -q -n %{name}-%{version}.%{svnrev}
 ## Hey, those shouldn't be executable...
 chmod -x lib/*.{h,x}
 
 %build
 %configure \
     --with-gmetad \
+    --disable-static \
     --with-shared
-## Build currently fails if enabled
-    #--disable-static \
 
 ## Default to run as user ganglia instead of nobody
 %{__perl} -pi.orig -e 's|nobody|ganglia|g' \
@@ -99,7 +117,7 @@ rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/%{_datadir}/%{name}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}
-cp -rp %{_builddir}/%{name}-%{version}/web/* $RPM_BUILD_ROOT%{_datadir}/%{name}/
+cp -rp web/* $RPM_BUILD_ROOT%{_datadir}/%{name}/
 mv $RPM_BUILD_ROOT%{_datadir}/%{name}/conf.php $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/
 ln -s ../../..%{_sysconfdir}/%{name}/conf.php \
     $RPM_BUILD_ROOT%{_datadir}/%{name}/conf.php
@@ -112,18 +130,35 @@ cat << __EOF__ > $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/%{name}.conf
 __EOF__
 
 ## Create directory structures
-mkdir -p $RPM_BUILD_ROOT/etc/rc.d/init.d
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/init.d
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d
+mkdir -p $RPM_BUILD_ROOT%{_libdir}/ganglia/python_modules
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/%{name}/rrds
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man5
 ## Put files in place
-cp -p %{_builddir}/%{name}-%{version}/gmond/gmond.init $RPM_BUILD_ROOT/etc/rc.d/init.d/gmond
-cp -p %{_builddir}/%{name}-%{version}/gmetad/gmetad.init $RPM_BUILD_ROOT/etc/rc.d/init.d/gmetad
-cp -p %{_builddir}/%{name}-%{version}/gmond/gmond.conf.5 $RPM_BUILD_ROOT%{_mandir}/man5/gmond.conf.5
-cp -p %{_builddir}/%{name}-%{version}/gmetad/gmetad.conf $RPM_BUILD_ROOT/etc/gmetad.conf
-cp -p %{_builddir}/%{name}-%{version}/mans/*.1 $RPM_BUILD_ROOT%{_mandir}/man1/
+cp -p gmond/gmond.init $RPM_BUILD_ROOT%{_sysconfdir}/init.d/gmond
+cp -p gmetad/gmetad.init $RPM_BUILD_ROOT%{_sysconfdir}/init.d/gmetad
+cp -p gmond/gmond.conf.5 $RPM_BUILD_ROOT%{_mandir}/man5/gmond.conf.5
+cp -p gmetad/gmetad.conf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/gmetad.conf
+cp -p mans/*.1 $RPM_BUILD_ROOT%{_mandir}/man1/
 ## Build default gmond.conf from gmond using the '-t' flag
-%{_builddir}/%{name}-%{version}/gmond/gmond -t > $RPM_BUILD_ROOT/etc/gmond.conf
+gmond/gmond -t > $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/gmond.conf
+
+## Python bits
+# Copy the python metric modules and .conf files
+cp -p gmond/python_modules/conf.d/*.pyconf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/
+cp -p gmond/python_modules/*/*.{py,pyc} $RPM_BUILD_ROOT%{_libdir}/ganglia/python_modules/
+# Don't install the example modules
+rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/example.conf
+rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/example.pyconf
+# Don't install the status modules
+rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/modgstatus.conf
+# Clean up the .conf.in files
+rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/*.conf.in
+# Disable the diskusage module until it is configured properly
+mv $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf.off
+
 ## Install binaries
 make install DESTDIR=$RPM_BUILD_ROOT
 ## House cleaning
@@ -137,6 +172,9 @@ rm -rf $RPM_BUILD_ROOT
 ## Add the "ganglia" user
 /usr/sbin/useradd -c "Ganglia Monitoring System" \
         -s /sbin/nologin -r -d %{_localstatedir}/lib/%{name} ganglia 2> /dev/null || :
+/sbin/ldconfig
+
+%post -p /sbin/ldconfig
 
 %post gmond
 /sbin/chkconfig --add gmond
@@ -167,6 +205,8 @@ fi
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING NEWS README ChangeLog
 %{_libdir}/libganglia*.so.*
+%{_libdir}/ganglia/*.so
+%exclude %{_libdir}/ganglia/modpython.so
 %{_bindir}/ganglia-config
 
 %files gmetad
@@ -175,26 +215,31 @@ fi
 %attr(0755,ganglia,ganglia) %{_localstatedir}/lib/%{name}/rrds
 %{_sbindir}/gmetad
 %{_mandir}/man1/gmetad.1*
-%{_sysconfdir}/rc.d/init.d/gmetad
-%config(noreplace) %{_sysconfdir}/gmetad.conf
+%{_sysconfdir}/init.d/gmetad
+%config(noreplace) %{_sysconfdir}/ganglia/gmetad.conf
 
 %files gmond
 %defattr(-,root,root,-)
 %{_bindir}/gmetric
 %{_bindir}/gstat
 %{_sbindir}/gmond
-%{_sysconfdir}/rc.d/init.d/gmond
+%{_sysconfdir}/init.d/gmond
 %{_mandir}/man5/gmond.conf.5*
 %{_mandir}/man1/gmond.1*
 %{_mandir}/man1/gstat.1*
 %{_mandir}/man1/gmetric.1*
-%config(noreplace) %{_sysconfdir}/gmond.conf
+%config(noreplace) %{_sysconfdir}/ganglia/gmond.conf
+
+%files gmond-python
+%dir %{_libdir}/ganglia/python_modules/
+%{_libdir}/ganglia/python_modules/*.py*
+%{_libdir}/ganglia/modpython.so*
+%config(noreplace) %{_sysconfdir}/ganglia/conf.d/*.pyconf*
 
 %files devel
 %defattr(-,root,root,-)
-%{_includedir}/ganglia.h
+%{_includedir}/*.h
 %{_libdir}/libganglia*.so
-%exclude %{_libdir}/libganglia.a
 
 %files web
 %defattr(-,root,root,-)
@@ -205,6 +250,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Wed Jun 11 2008 Jarod Wilson <jwilson@redhat.com> 3.1.0-0.1.r1399
+- Update to 3.1.x pre-release snapshot, svn rev 1399
+
 * Mon Jun 09 2008 Jarod Wilson <jwilson@redhat.com> 3.0.7-2
 - Bump and rebuild against latest rrdtool
 
