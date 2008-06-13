@@ -2,7 +2,7 @@
 
 Name:               ganglia
 Version:            3.1.0
-Release:            0.1%{?svnrev:.r%{svnrev}}%{?dist}
+Release:            0.2%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -10,6 +10,7 @@ License:            BSD
 URL:                http://ganglia.sourceforge.net/
 Source0:            http://www.ganglia.info/snapshots/3.1.x/%{name}-%{version}.%{svnrev}.tar.gz
 #Source0:            http://dl.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
+Patch0:             ganglia-3.1.0-r1399-ppc64build.patch
 Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:      rrdtool-devel, apr-devel >= 1
@@ -89,6 +90,7 @@ programmers can use to build scalable cluster or grid applications
 
 %prep
 %setup -q -n %{name}-%{version}.%{svnrev}
+%patch0 -p1
 ## Hey, those shouldn't be executable...
 chmod -x lib/*.{h,x}
 
@@ -250,6 +252,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Fri Jun 13 2008 Jarod Wilson <jwilson@redhat.com> 3.1.0-0.2.r1399
+- Work-around for incorrectly hard-coded libdir on ppc64
+
 * Wed Jun 11 2008 Jarod Wilson <jwilson@redhat.com> 3.1.0-0.1.r1399
 - Update to 3.1.x pre-release snapshot, svn rev 1399
 

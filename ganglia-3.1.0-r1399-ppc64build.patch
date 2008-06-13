@@ -1,0 +1,22 @@
+--- ganglia-3.1.0.1399/configure.in.orig	2008-06-13 10:23:06.000000000 -0400
++++ ganglia-3.1.0.1399/configure.in	2008-06-13 10:23:24.000000000 -0400
+@@ -574,7 +574,7 @@ if test "x$prefix" = xNONE; then
+   prefix="$ac_default_prefix"
+ fi
+ 
+-if test "x$host_cpu" = "xx86_64"; then
++if test "x$host_cpu" = "xx86_64" || test "x$host_cpu" = "xppc64"; then
+   libdir="$prefix/lib64"
+ else
+   libdir="$prefix/lib"
+--- ganglia-3.1.0.1399/configure.orig	2008-06-13 10:24:45.000000000 -0400
++++ ganglia-3.1.0.1399/configure	2008-06-13 10:25:33.000000000 -0400
+@@ -24225,7 +24225,7 @@ if test "x$prefix" = xNONE; then
+   prefix="$ac_default_prefix"
+ fi
+ 
+-if test "x$host_cpu" = "xx86_64"; then
++if test "x$host_cpu" = "xx86_64" || test "x$host_cpu" = "xppc64"; then
+   libdir="$prefix/lib64"
+ else
+   libdir="$prefix/lib"
