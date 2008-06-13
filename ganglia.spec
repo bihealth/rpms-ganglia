@@ -2,7 +2,7 @@
 
 Name:               ganglia
 Version:            3.1.0
-Release:            0.2%{?svnrev:.r%{svnrev}}%{?dist}
+Release:            0.3%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -252,6 +252,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Fri Jun 13 2008 Jarod Wilson <jwilson@redhat.com> 3.1.0-0.3.r1399
+- One more try at work-around. Needs powerpc64, not ppc64...
+
 * Fri Jun 13 2008 Jarod Wilson <jwilson@redhat.com> 3.1.0-0.2.r1399
 - Work-around for incorrectly hard-coded libdir on ppc64
 

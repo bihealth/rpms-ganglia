@@ -5,7 +5,7 @@
  fi
  
 -if test "x$host_cpu" = "xx86_64"; then
-+if test "x$host_cpu" = "xx86_64" || test "x$host_cpu" = "xppc64"; then
++if test "x$host_cpu" = "xx86_64" || test "x$host_cpu" = "xpowerpc64"; then
    libdir="$prefix/lib64"
  else
    libdir="$prefix/lib"
@@ -16,7 +16,7 @@
  fi
  
 -if test "x$host_cpu" = "xx86_64"; then
-+if test "x$host_cpu" = "xx86_64" || test "x$host_cpu" = "xppc64"; then
++if test "x$host_cpu" = "xx86_64" || test "x$host_cpu" = "xpowerpc64"; then
    libdir="$prefix/lib64"
  else
    libdir="$prefix/lib"
