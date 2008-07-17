@@ -1,16 +1,14 @@
-%define svnrev 1399
-
 Name:               ganglia
 Version:            3.1.0
-Release:            0.3%{?svnrev:.r%{svnrev}}%{?dist}
+Release:            0.4%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
-Source0:            http://www.ganglia.info/snapshots/3.1.x/%{name}-%{version}.%{svnrev}.tar.gz
+Source0:            http://www.ganglia.info/testing//%{name}-%{version}.tar.gz
+#Source0:            http://www.ganglia.info/snapshots/3.1.x/%{name}-%{version}.%{svnrev}.tar.gz
 #Source0:            http://dl.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
-Patch0:             ganglia-3.1.0-r1399-ppc64build.patch
 Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:      rrdtool-devel, apr-devel >= 1
@@ -89,8 +87,7 @@ The Ganglia Monitoring Core library provides a set of functions that
 programmers can use to build scalable cluster or grid applications
 
 %prep
-%setup -q -n %{name}-%{version}.%{svnrev}
-%patch0 -p1
+%setup -q -n %{name}-%{version}%{?svnrev:.%{svnrev}}
 ## Hey, those shouldn't be executable...
 chmod -x lib/*.{h,x}
 
@@ -98,13 +95,13 @@ chmod -x lib/*.{h,x}
 %configure \
     --with-gmetad \
     --disable-static \
-    --with-shared
+    --enable-shared
 
 ## Default to run as user ganglia instead of nobody
 %{__perl} -pi.orig -e 's|nobody|ganglia|g' \
     lib/libgmond.c gmetad/conf.c gmond/g25_config.c \
     gmetad/gmetad.conf gmond/gmond.conf.html ganglia.html \
-    gmond/conf.pod ganglia.pod README
+    gmond/conf.pod ganglia.pod README lib/default_conf.h 
 
 ## Don't have initscripts turn daemons on by default
 %{__perl} -pi.orig -e 's|2345|-|g' \
@@ -145,7 +142,7 @@ cp -p gmond/gmond.conf.5 $RPM_BUILD_ROOT%{_mandir}/man5/gmond.conf.5
 cp -p gmetad/gmetad.conf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/gmetad.conf
 cp -p mans/*.1 $RPM_BUILD_ROOT%{_mandir}/man1/
 ## Build default gmond.conf from gmond using the '-t' flag
-gmond/gmond -t > $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/gmond.conf
+gmond/gmond -t | %{__perl} -pe 's|nobody|ganglia|g' > $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/gmond.conf
 
 ## Python bits
 # Copy the python metric modules and .conf files
@@ -252,6 +249,11 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Thu Jul 17 2008 Kostas Georgiou <k.georgiou@imperial.ac.uk> 3.1.0-0.4
+- Update to the 3.1.0 pre-release
+- Fixes gmond.conf to use the ganglia user and not nobody
+- Removal of the ppc64 work-around
+ 
 * Fri Jun 13 2008 Jarod Wilson <jwilson@redhat.com> 3.1.0-0.3.r1399
 - One more try at work-around. Needs powerpc64, not ppc64...
 
