@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.1.0
-Release:            0.4%{?svnrev:.r%{svnrev}}%{?dist}
+Release:            0.5%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -147,6 +147,7 @@ gmond/gmond -t | %{__perl} -pe 's|nobody|ganglia|g' > $RPM_BUILD_ROOT%{_sysconfd
 ## Python bits
 # Copy the python metric modules and .conf files
 cp -p gmond/python_modules/conf.d/*.pyconf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/
+cp -p gmond/modules/conf.d/modpython.conf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/
 cp -p gmond/python_modules/*/*.{py,pyc} $RPM_BUILD_ROOT%{_libdir}/ganglia/python_modules/
 # Don't install the example modules
 rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/example.conf
@@ -234,6 +235,7 @@ fi
 %{_libdir}/ganglia/python_modules/*.py*
 %{_libdir}/ganglia/modpython.so*
 %config(noreplace) %{_sysconfdir}/ganglia/conf.d/*.pyconf*
+%config(noreplace) %{_sysconfdir}/ganglia/conf.d/modpython.conf
 
 %files devel
 %defattr(-,root,root,-)
@@ -249,6 +251,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Tue Jul 29 2008 Kostas Georgiou <k.georgiou@imperial.ac.uk> 3.1.0-0.5
+- Add the config files for the python module
+
 * Thu Jul 17 2008 Kostas Georgiou <k.georgiou@imperial.ac.uk> 3.1.0-0.4
 - Update to the 3.1.0 pre-release
 - Fixes gmond.conf to use the ganglia user and not nobody
