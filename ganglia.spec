@@ -1,14 +1,16 @@
 Name:               ganglia
 Version:            3.1.0
-Release:            0.5%{?svnrev:.r%{svnrev}}%{?dist}
+Release:            1%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
-Source0:            http://www.ganglia.info/testing//%{name}-%{version}.tar.gz
+Source0:            http://dl.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
 #Source0:            http://www.ganglia.info/snapshots/3.1.x/%{name}-%{version}.%{svnrev}.tar.gz
-#Source0:            http://dl.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
+Patch0:             tcpconn-fixes.patch
+Patch1:             gmetad-authority.patch
+Patch2:             diskusage-fix.patch
 Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:      rrdtool-devel, apr-devel >= 1
@@ -88,6 +90,9 @@ programmers can use to build scalable cluster or grid applications
 
 %prep
 %setup -q -n %{name}-%{version}%{?svnrev:.%{svnrev}}
+%patch0 -p0
+%patch1 -p0
+%patch2 -p0
 ## Hey, those shouldn't be executable...
 chmod -x lib/*.{h,x}
 
@@ -120,12 +125,23 @@ cp -rp web/* $RPM_BUILD_ROOT%{_datadir}/%{name}/
 mv $RPM_BUILD_ROOT%{_datadir}/%{name}/conf.php $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/
 ln -s ../../..%{_sysconfdir}/%{name}/conf.php \
     $RPM_BUILD_ROOT%{_datadir}/%{name}/conf.php
+mv $RPM_BUILD_ROOT%{_datadir}/%{name}/private_clusters $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/
+ln -s ../../..%{_sysconfdir}/%{name}/private_clusters \
+    $RPM_BUILD_ROOT%{_datadir}/%{name}/private_clusters
 cat << __EOF__ > $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/%{name}.conf
   #
   # Ganglia monitoring system php web frontend
   #
   
   Alias /%{name} %{_datadir}/%{name}
+
+  <Location /%{name}>
+    Order deny,allow
+    Deny from all
+    Allow from 127.0.0.1
+    Allow from ::1
+    # Allow from .example.com
+  </Location>
 __EOF__
 
 ## Create directory structures
@@ -147,7 +163,7 @@ gmond/gmond -t | %{__perl} -pe 's|nobody|ganglia|g' > $RPM_BUILD_ROOT%{_sysconfd
 ## Python bits
 # Copy the python metric modules and .conf files
 cp -p gmond/python_modules/conf.d/*.pyconf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/
-cp -p gmond/modules/conf.d/modpython.conf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/
+cp -p gmond/modules/conf.d/*.conf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/
 cp -p gmond/python_modules/*/*.{py,pyc} $RPM_BUILD_ROOT%{_libdir}/ganglia/python_modules/
 # Don't install the example modules
 rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/example.conf
@@ -156,14 +172,14 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/example.pyconf
 rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/modgstatus.conf
 # Clean up the .conf.in files
 rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/*.conf.in
-# Disable the diskusage module until it is configured properly
-mv $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf.off
+## Disable the diskusage module until it is configured properly
+#mv $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf.off
 
 ## Install binaries
 make install DESTDIR=$RPM_BUILD_ROOT
 ## House cleaning
 rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
-rm -f $RPM_BUILD_ROOT%{_datadir}/{Makefile.am,version.php.in}
+rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/{Makefile.am,version.php.in}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -229,6 +245,8 @@ fi
 %{_mandir}/man1/gstat.1*
 %{_mandir}/man1/gmetric.1*
 %config(noreplace) %{_sysconfdir}/ganglia/gmond.conf
+%config(noreplace) %{_sysconfdir}/ganglia/conf.d/*.conf
+%exclude %{_sysconfdir}/ganglia/conf.d/modpython.conf
 
 %files gmond-python
 %dir %{_libdir}/ganglia/python_modules/
@@ -247,10 +265,20 @@ fi
 %doc web/AUTHORS web/COPYING web/ChangeLog
 %dir %{_sysconfdir}/%{name}
 %config(noreplace) %{_sysconfdir}/%{name}/conf.php
+%config(noreplace) %{_sysconfdir}/%{name}/private_clusters
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %{_datadir}/%{name}
 
 %changelog
+* Mon Aug 11 2008 Kostas Georgiou <k.georgiou@imperial.ac.uk> 3.1.0-1
+- Upstream patches from 3.1.1
+- Move private_clusters config to /etc and mark it as a config file
+- Only allow connections from localhost by default on the web frontend
+- Add some extra module config files (modules are always loaded at the
+  moment so removing the configs has no effect beyond metric collection
+  (upstream is working on way way to disable module loading from the
+  configs)
+
 * Tue Jul 29 2008 Kostas Georgiou <k.georgiou@imperial.ac.uk> 3.1.0-0.5
 - Add the config files for the python module
 
