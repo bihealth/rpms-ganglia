@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.1.0
-Release:            1%{?svnrev:.r%{svnrev}}%{?dist}
+Release:            2%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -221,6 +221,7 @@ fi
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING NEWS README ChangeLog
 %{_libdir}/libganglia*.so.*
+%dir %{_libdir}/ganglia
 %{_libdir}/ganglia/*.so
 %exclude %{_libdir}/ganglia/modpython.so
 %{_bindir}/ganglia-config
@@ -232,6 +233,7 @@ fi
 %{_sbindir}/gmetad
 %{_mandir}/man1/gmetad.1*
 %{_sysconfdir}/init.d/gmetad
+%dir %{_sysconfdir}/ganglia
 %config(noreplace) %{_sysconfdir}/ganglia/gmetad.conf
 
 %files gmond
@@ -244,6 +246,8 @@ fi
 %{_mandir}/man1/gmond.1*
 %{_mandir}/man1/gstat.1*
 %{_mandir}/man1/gmetric.1*
+%dir %{_sysconfdir}/ganglia
+%dir %{_sysconfdir}/ganglia/conf.d
 %config(noreplace) %{_sysconfdir}/ganglia/gmond.conf
 %config(noreplace) %{_sysconfdir}/ganglia/conf.d/*.conf
 %exclude %{_sysconfdir}/ganglia/conf.d/modpython.conf
@@ -263,13 +267,15 @@ fi
 %files web
 %defattr(-,root,root,-)
 %doc web/AUTHORS web/COPYING web/ChangeLog
-%dir %{_sysconfdir}/%{name}
 %config(noreplace) %{_sysconfdir}/%{name}/conf.php
 %config(noreplace) %{_sysconfdir}/%{name}/private_clusters
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %{_datadir}/%{name}
 
 %changelog
+* Thu Aug 28 2008 Michael Schwendt <mschwendt@fedoraproject.org> 3.1.0-2
+- Include unowned directories.
+
 * Mon Aug 11 2008 Kostas Georgiou <k.georgiou@imperial.ac.uk> 3.1.0-1
 - Upstream patches from 3.1.1
 - Move private_clusters config to /etc and mark it as a config file
