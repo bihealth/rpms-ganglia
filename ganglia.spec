@@ -1,6 +1,6 @@
 Name:               ganglia
-Version:            3.1.0
-Release:            2%{?svnrev:.r%{svnrev}}%{?dist}
+Version:            3.1.1
+Release:            1%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -8,9 +8,7 @@ License:            BSD
 URL:                http://ganglia.sourceforge.net/
 Source0:            http://dl.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
 #Source0:            http://www.ganglia.info/snapshots/3.1.x/%{name}-%{version}.%{svnrev}.tar.gz
-Patch0:             tcpconn-fixes.patch
-Patch1:             gmetad-authority.patch
-Patch2:             diskusage-fix.patch
+Patch0:             diskusage-fix.patch
 Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:      rrdtool-devel, apr-devel >= 1
@@ -91,8 +89,6 @@ programmers can use to build scalable cluster or grid applications
 %prep
 %setup -q -n %{name}-%{version}%{?svnrev:.%{svnrev}}
 %patch0 -p0
-%patch1 -p0
-%patch2 -p0
 ## Hey, those shouldn't be executable...
 chmod -x lib/*.{h,x}
 
@@ -266,13 +262,16 @@ fi
 
 %files web
 %defattr(-,root,root,-)
-%doc web/AUTHORS web/COPYING web/ChangeLog
+%doc web/AUTHORS web/COPYING
 %config(noreplace) %{_sysconfdir}/%{name}/conf.php
 %config(noreplace) %{_sysconfdir}/%{name}/private_clusters
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %{_datadir}/%{name}
 
 %changelog
+* Fri Oct 24 2008 Jarod Wilson <jarod@redhat.com> 3.1.1-1
+- Update to 3.1.1
+
 * Thu Aug 28 2008 Michael Schwendt <mschwendt@fedoraproject.org> 3.1.0-2
 - Include unowned directories.
 
