@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.1.1
-Release:            1%{?svnrev:.r%{svnrev}}%{?dist}
+Release:            2%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -269,6 +269,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Sun Nov 30 2008 Ignacio Vazquez-Abrams <ivazqueznet+rpm@gmail.com> - 3.1.1-2
+- Rebuild for Python 2.6
+
 * Fri Oct 24 2008 Jarod Wilson <jarod@redhat.com> 3.1.1-1
 - Update to 3.1.1
 
