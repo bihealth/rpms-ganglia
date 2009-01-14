@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.1.1
-Release:            2%{?svnrev:.r%{svnrev}}%{?dist}
+Release:            3%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -9,6 +9,7 @@ URL:                http://ganglia.sourceforge.net/
 Source0:            http://dl.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
 #Source0:            http://www.ganglia.info/snapshots/3.1.x/%{name}-%{version}.%{svnrev}.tar.gz
 Patch0:             diskusage-fix.patch
+Patch1:             gmetad-bof-dos.patch
 Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:      rrdtool-devel, apr-devel >= 1
@@ -89,6 +90,7 @@ programmers can use to build scalable cluster or grid applications
 %prep
 %setup -q -n %{name}-%{version}%{?svnrev:.%{svnrev}}
 %patch0 -p0
+%patch1 -p0
 ## Hey, those shouldn't be executable...
 chmod -x lib/*.{h,x}
 
@@ -264,11 +266,15 @@ fi
 %defattr(-,root,root,-)
 %doc web/AUTHORS web/COPYING
 %config(noreplace) %{_sysconfdir}/%{name}/conf.php
-%config(noreplace) %{_sysconfdir}/%{name}/private_clusters
+%attr(0640,root,apache) %config(noreplace) %{_sysconfdir}/%{name}/private_clusters
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %{_datadir}/%{name}
 
 %changelog
+* Wed Jan 14 2009 Kostas Georgiou <k.georgiou@imperial.ac.uk> - 3.1.1-3
+- Fix for gmetad server buffer overflow
+- The private_clusters file should not be readable by everyone
+
 * Sun Nov 30 2008 Ignacio Vazquez-Abrams <ivazqueznet+rpm@gmail.com> - 3.1.1-2
 - Rebuild for Python 2.6
 
