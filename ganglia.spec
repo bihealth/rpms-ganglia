@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.1.1
-Release:            3%{?svnrev:.r%{svnrev}}%{?dist}
+Release:            4%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -271,6 +271,10 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Tue Jan 20 2009 Kostas Georgiou <k.georgiou@imperial.ac.uk> - 3.1.1-4
+- [480236] Updated patch for the buffer overflow from upstream with
+  additional fixes
+
 * Wed Jan 14 2009 Kostas Georgiou <k.georgiou@imperial.ac.uk> - 3.1.1-3
 - Fix for gmetad server buffer overflow
 - The private_clusters file should not be readable by everyone
