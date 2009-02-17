@@ -1,6 +1,6 @@
 Name:               ganglia
-Version:            3.1.1
-Release:            4%{?svnrev:.r%{svnrev}}%{?dist}
+Version:            3.1.2
+Release:            1%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -9,7 +9,6 @@ URL:                http://ganglia.sourceforge.net/
 Source0:            http://dl.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
 #Source0:            http://www.ganglia.info/snapshots/3.1.x/%{name}-%{version}.%{svnrev}.tar.gz
 Patch0:             diskusage-fix.patch
-Patch1:             gmetad-bof-dos.patch
 Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:      rrdtool-devel, apr-devel >= 1
@@ -90,7 +89,6 @@ programmers can use to build scalable cluster or grid applications
 %prep
 %setup -q -n %{name}-%{version}%{?svnrev:.%{svnrev}}
 %patch0 -p0
-%patch1 -p0
 ## Hey, those shouldn't be executable...
 chmod -x lib/*.{h,x}
 
@@ -271,6 +269,10 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Tue Feb 17 2009 Kostas Georgiou <k.georgiou@imperial.ac.uk> - 3.1.2-1
+- Update to 3.1.2
+- Remove unneeded patch for CVE-2009-0241
+
 * Tue Jan 20 2009 Kostas Georgiou <k.georgiou@imperial.ac.uk> - 3.1.1-4
 - [480236] Updated patch for the buffer overflow from upstream with
   additional fixes
