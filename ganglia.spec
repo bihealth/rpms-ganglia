@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.1.2
-Release:            1%{?svnrev:.r%{svnrev}}%{?dist}
+Release:            2%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -269,6 +269,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Tue Feb 24 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.1.2-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_11_Mass_Rebuild
+
 * Tue Feb 17 2009 Kostas Georgiou <k.georgiou@imperial.ac.uk> - 3.1.2-1
 - Update to 3.1.2
 - Remove unneeded patch for CVE-2009-0241
