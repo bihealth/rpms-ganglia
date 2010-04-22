@@ -1,6 +1,6 @@
 Name:               ganglia
-Version:            3.1.2
-Release:            4%{?svnrev:.r%{svnrev}}%{?dist}
+Version:            3.1.7
+Release:            1%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -8,13 +8,15 @@ License:            BSD
 URL:                http://ganglia.sourceforge.net/
 Source0:            http://dl.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
 #Source0:            http://www.ganglia.info/snapshots/3.1.x/%{name}-%{version}.%{svnrev}.tar.gz
-Patch0:             diskusage-fix.patch
+Patch0:             diskusage-pcre.patch
+Patch1:             setuserid-fix.patch
 Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:      rrdtool-devel, apr-devel >= 1
 BuildRequires:      libpng-devel, libart_lgpl-devel
 BuildRequires:      libconfuse-devel, expat-devel
 BuildRequires:      python-devel, freetype-devel
+BuildRequires:      pcre-devel
 
 %description
 Ganglia is a scalable, real-time monitoring and execution environment
@@ -88,21 +90,23 @@ programmers can use to build scalable cluster or grid applications
 
 %prep
 %setup -q -n %{name}-%{version}%{?svnrev:.%{svnrev}}
-%patch0 -p0
+%patch0 -p1
+%patch1 -p1
 ## Hey, those shouldn't be executable...
 chmod -x lib/*.{h,x}
 
 %build
 %configure \
+    --enable-setuid=ganglia \
+    --enable-setgid=ganglia \
     --with-gmetad \
     --disable-static \
-    --enable-shared
+    --enable-shared \
+    --sysconfdir=%{_sysconfdir}/ganglia
 
 ## Default to run as user ganglia instead of nobody
 %{__perl} -pi.orig -e 's|nobody|ganglia|g' \
-    lib/libgmond.c gmetad/conf.c gmond/g25_config.c \
-    gmetad/gmetad.conf gmond/gmond.conf.html ganglia.html \
-    gmond/conf.pod ganglia.pod README lib/default_conf.h 
+    gmond/gmond.conf.html ganglia.html gmond/conf.pod
 
 ## Don't have initscripts turn daemons on by default
 %{__perl} -pi.orig -e 's|2345|-|g' \
@@ -112,6 +116,7 @@ make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
+make install DESTDIR=$RPM_BUILD_ROOT 
 
 ## Put web files in place
 mkdir -p $RPM_BUILD_ROOT/%{_datadir}/%{name}
@@ -160,7 +165,7 @@ gmond/gmond -t | %{__perl} -pe 's|nobody|ganglia|g' > $RPM_BUILD_ROOT%{_sysconfd
 # Copy the python metric modules and .conf files
 cp -p gmond/python_modules/conf.d/*.pyconf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/
 cp -p gmond/modules/conf.d/*.conf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/
-cp -p gmond/python_modules/*/*.{py,pyc} $RPM_BUILD_ROOT%{_libdir}/ganglia/python_modules/
+cp -p gmond/python_modules/*/*.py $RPM_BUILD_ROOT%{_libdir}/ganglia/python_modules/
 # Don't install the example modules
 rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/example.conf
 rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/example.pyconf
@@ -170,6 +175,8 @@ rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/modgstatus.conf
 rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/*.conf.in
 ## Disable the diskusage module until it is configured properly
 #mv $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf.off
+# Don't install Makefile* in the web dir
+rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/Makefile*
 
 ## Install binaries
 make install DESTDIR=$RPM_BUILD_ROOT
@@ -249,6 +256,7 @@ fi
 %exclude %{_sysconfdir}/ganglia/conf.d/modpython.conf
 
 %files gmond-python
+%defattr(-,root,root,-)
 %dir %{_libdir}/ganglia/python_modules/
 %{_libdir}/ganglia/python_modules/*.py*
 %{_libdir}/ganglia/modpython.so*
@@ -269,6 +277,11 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Thu Apr 22 2010 Kostas Georgiou <georgiou@fedoraproject.org> - 3.1.7-1
+- New upstream release
+- Spec file cleanups
+- Use the new name_match feature to enable the diskusage plugin by default
+
 * Fri Jul 24 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.1.2-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_12_Mass_Rebuild
 
