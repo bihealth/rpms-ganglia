@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.1.7
-Release:            2%{?svnrev:.r%{svnrev}}%{?dist}
+Release:            3%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -277,6 +277,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.1.7-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
 * Sat Jul 31 2010 Thomas Spura <tomspur@fedoraproject.org> - 3.1.7-2
 - Rebuild for https://fedoraproject.org/wiki/Features/Python_2.7/MassRebuild
 
