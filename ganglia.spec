@@ -279,7 +279,7 @@ fi
 %{_datadir}/%{name}
 
 %changelog
-* Tue Feb 08 2011 Kostas Georgiou <georgiou@fedoraproject.org> - 3.1.7-4
+* Tue Jun 14 2011 Kostas Georgiou <georgiou@fedoraproject.org> - 3.1.7-4
 - Fix buffer overflow in moddisk.so #689483
 
 * Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.1.7-3
