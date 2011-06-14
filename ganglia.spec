@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.1.7
-Release:            3%{?svnrev:.r%{svnrev}}%{?dist}
+Release:            4%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -10,6 +10,7 @@ Source0:            http://dl.sourceforge.net/sourceforge/%{name}/%{name}-%{vers
 #Source0:            http://www.ganglia.info/snapshots/3.1.x/%{name}-%{version}.%{svnrev}.tar.gz
 Patch0:             diskusage-pcre.patch
 Patch1:             setuserid-fix.patch
+Patch2:             diskmetrics.patch
 Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:      rrdtool-devel, apr-devel >= 1
@@ -92,6 +93,7 @@ programmers can use to build scalable cluster or grid applications
 %setup -q -n %{name}-%{version}%{?svnrev:.%{svnrev}}
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 ## Hey, those shouldn't be executable...
 chmod -x lib/*.{h,x}
 
@@ -277,6 +279,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Tue Feb 08 2011 Kostas Georgiou <georgiou@fedoraproject.org> - 3.1.7-4
+- Fix buffer overflow in moddisk.so #689483
+
 * Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.1.7-3
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
 
