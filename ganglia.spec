@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.1.7
-Release:            4%{?svnrev:.r%{svnrev}}%{?dist}
+Release:            5%{?svnrev:.r%{svnrev}}%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -279,6 +279,9 @@ fi
 %{_datadir}/%{name}
 
 %changelog
+* Fri Jan 13 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.1.7-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
 * Tue Jun 14 2011 Kostas Georgiou <georgiou@fedoraproject.org> - 3.1.7-4
 - Fix buffer overflow in moddisk.so #689483
 
