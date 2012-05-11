@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.3.7
-Release:            2%{?dist}
+Release:            3%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -142,11 +142,8 @@ mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}
 cp -rp web/* $RPM_BUILD_ROOT%{_datadir}/%{name}/
 mv $RPM_BUILD_ROOT%{_datadir}/%{name}/conf_default.php $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/
-ln -s ../../..%{_sysconfdir}/%{name}/conf.php \
+ln -s ../../..%{_sysconfdir}/%{name}/conf_default.php \
     $RPM_BUILD_ROOT%{_datadir}/%{name}/conf_default.php
-#mv $RPM_BUILD_ROOT%{_datadir}/%{name}/private_clusters $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/
-#ln -s ../../..%{_sysconfdir}/%{name}/private_clusters \
-#    $RPM_BUILD_ROOT%{_datadir}/%{name}/private_clusters
 cat << __EOF__ > $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/%{name}.conf
   #
   # Ganglia monitoring system php web frontend
@@ -168,6 +165,9 @@ mkdir -p $RPM_BUILD_ROOT%{_unitdir}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d
 mkdir -p $RPM_BUILD_ROOT%{_libdir}/ganglia/python_modules
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/%{name}/rrds
+mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/%{name}/conf
+mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/%{name}/dwoo/cache
+mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/%{name}/dwoo/compiled
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man5
 ## Put files in place
@@ -339,11 +339,17 @@ fi
 %defattr(-,root,root,-)
 %doc web/AUTHORS web/COPYING
 %config(noreplace) %{_sysconfdir}/%{name}/conf_default.php
-#%attr(0640,root,apache) %config(noreplace) %{_sysconfdir}/%{name}/private_clusters
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %{_datadir}/%{name}
+%dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/conf
+%dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo
+%dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/cache
+%dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Fri May 11 2012 Terje Rosten <terje.rosten@ntnu.no> - 3.3.7-3
+- Fix web frontend
+
 * Fri May 11 2012 Jon Ciesla <limburgher@gmail.com> - 3.3.7-2
 - scriptlet corrections.
 
