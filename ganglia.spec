@@ -1,23 +1,29 @@
 Name:               ganglia
-Version:            3.1.7
-Release:            6%{?svnrev:.r%{svnrev}}%{?dist}
+Version:            3.3.7
+Release:            2%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
-Source0:            http://dl.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
-#Source0:            http://www.ganglia.info/snapshots/3.1.x/%{name}-%{version}.%{svnrev}.tar.gz
+Source0:            http://downloads.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
+Source1:            gmond.service
+Source2:            gmetad.service
 Patch0:             diskusage-pcre.patch
-Patch1:             setuserid-fix.patch
 Patch2:             diskmetrics.patch
 Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:      rrdtool-devel, apr-devel >= 1
-BuildRequires:      libpng-devel, libart_lgpl-devel
-BuildRequires:      libconfuse-devel, expat-devel
-BuildRequires:      python-devel, freetype-devel
+BuildRequires:      systemd-units
+BuildRequires:      rrdtool-devel
+BuildRequires:      apr-devel >= 1
+BuildRequires:      libpng-devel
+BuildRequires:      libart_lgpl-devel
+BuildRequires:      libconfuse-devel
+BuildRequires:      expat-devel
+BuildRequires:      python-devel
+BuildRequires:      freetype-devel
 BuildRequires:      pcre-devel
+
 
 %description
 Ganglia is a scalable, real-time monitoring and execution environment
@@ -27,7 +33,9 @@ well-defined XML format.
 %package web
 Summary:            Ganglia Web Frontend
 Group:              Applications/Internet
-Requires:           rrdtool, php, php-gd
+Requires:           rrdtool
+Requires:           php
+Requires:           php-gd
 Requires:           %{name}-gmetad = %{version}-%{release}
 
 %description web
@@ -39,9 +47,13 @@ written in the PHP4 language.
 Summary:            Ganglia Metadata collection daemon
 Group:              Applications/Internet
 Requires:           %{name} = %{version}-%{release}
-Requires(post):     /sbin/chkconfig
-Requires(preun):    /sbin/chkconfig
-Requires(preun):    /sbin/service
+# This is actually needed for the %triggerun script but Requires(triggerun)
+# is not valid.  We can use %post because this particular %triggerun script
+# should fire just after this package is installed.
+Requires(post):     systemd-sysv
+Requires(post):     systemd-units
+Requires(preun):    systemd-units
+Requires(postun):   systemd-units
 
 %description gmetad
 Ganglia is a scalable, real-time monitoring and execution environment
@@ -55,9 +67,13 @@ to form a monitoring grid. It also keeps metric history using rrdtool.
 Summary:            Ganglia Monitoring daemon
 Group:              Applications/Internet
 Requires:           %{name} = %{version}-%{release}
-Requires(post):     /sbin/chkconfig
-Requires(preun):    /sbin/chkconfig
-Requires(preun):    /sbin/service
+# This is actually needed for the %triggerun script but Requires(triggerun)
+# is not valid.  We can use %post because this particular %triggerun script
+# should fire just after this package is installed.
+Requires(post):     systemd-sysv
+Requires(post):     systemd-units
+Requires(preun):    systemd-units
+Requires(postun):   systemd-units
 
 %description gmond
 Ganglia is a scalable, real-time monitoring and execution environment
@@ -70,7 +86,8 @@ Multicast domain.
 %package gmond-python
 Summary:            Ganglia Monitor daemon python DSO and metric modules
 Group:              Applications/Internet
-Requires:           ganglia-gmond, python
+Requires:           ganglia-gmond
+Requires:           python
 
 %description gmond-python
 Ganglia is a scalable, real-time monitoring and execution environment
@@ -90,9 +107,8 @@ The Ganglia Monitoring Core library provides a set of functions that
 programmers can use to build scalable cluster or grid applications
 
 %prep
-%setup -q -n %{name}-%{version}%{?svnrev:.%{svnrev}}
+%setup -q
 %patch0 -p1
-%patch1 -p1
 %patch2 -p1
 ## Hey, those shouldn't be executable...
 chmod -x lib/*.{h,x}
@@ -125,12 +141,12 @@ mkdir -p $RPM_BUILD_ROOT/%{_datadir}/%{name}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}
 cp -rp web/* $RPM_BUILD_ROOT%{_datadir}/%{name}/
-mv $RPM_BUILD_ROOT%{_datadir}/%{name}/conf.php $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/
+mv $RPM_BUILD_ROOT%{_datadir}/%{name}/conf_default.php $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/
 ln -s ../../..%{_sysconfdir}/%{name}/conf.php \
-    $RPM_BUILD_ROOT%{_datadir}/%{name}/conf.php
-mv $RPM_BUILD_ROOT%{_datadir}/%{name}/private_clusters $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/
-ln -s ../../..%{_sysconfdir}/%{name}/private_clusters \
-    $RPM_BUILD_ROOT%{_datadir}/%{name}/private_clusters
+    $RPM_BUILD_ROOT%{_datadir}/%{name}/conf_default.php
+#mv $RPM_BUILD_ROOT%{_datadir}/%{name}/private_clusters $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/
+#ln -s ../../..%{_sysconfdir}/%{name}/private_clusters \
+#    $RPM_BUILD_ROOT%{_datadir}/%{name}/private_clusters
 cat << __EOF__ > $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/%{name}.conf
   #
   # Ganglia monitoring system php web frontend
@@ -148,15 +164,15 @@ cat << __EOF__ > $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/%{name}.conf
 __EOF__
 
 ## Create directory structures
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/init.d
+mkdir -p $RPM_BUILD_ROOT%{_unitdir}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d
 mkdir -p $RPM_BUILD_ROOT%{_libdir}/ganglia/python_modules
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/%{name}/rrds
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man5
 ## Put files in place
-cp -p gmond/gmond.init $RPM_BUILD_ROOT%{_sysconfdir}/init.d/gmond
-cp -p gmetad/gmetad.init $RPM_BUILD_ROOT%{_sysconfdir}/init.d/gmetad
+install -p -m 0644 %{SOURCE1} %{buildroot}%{_unitdir}/gmond.service
+install -p -m 0644 %{SOURCE2} %{buildroot}%{_unitdir}/gmetad.service
 cp -p gmond/gmond.conf.5 $RPM_BUILD_ROOT%{_mandir}/man5/gmond.conf.5
 cp -p gmetad/gmetad.conf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/gmetad.conf
 cp -p mans/*.1 $RPM_BUILD_ROOT%{_mandir}/man1/
@@ -198,29 +214,77 @@ rm -rf $RPM_BUILD_ROOT
 %post -p /sbin/ldconfig
 
 %post gmond
-/sbin/chkconfig --add gmond
-
-%post gmetad
-/sbin/chkconfig --add gmetad
-
-%preun gmetad
-if [ "$1" = 0 ]
-then
-  /sbin/service gmetad stop >/dev/null 2>&1 || :
-  /sbin/chkconfig --del gmetad
+if [ $1 -eq 1 ] ; then 
+    /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 fi
 
 %preun gmond
-if [ "$1" = 0 ]
-then
-  /sbin/service gmond stop >/dev/null 2>&1 || :
-  /sbin/chkconfig --del gmond
+if [ $1 -eq 0 ] ; then
+    /bin/systemctl --no-reload disable gmond.service > /dev/null 2>&1 || :
+    /bin/systemctl stop gmond.service > /dev/null 2>&1 || :
+fi
+
+%postun gmond
+/bin/systemctl daemon-reload >/dev/null 2>&1 || :
+if [ $1 -ge 1 ] ; then
+    /bin/systemctl try-restart gmond.service >/dev/null 2>&1 || :
+fi
+
+%post gmetad
+if [ $1 -eq 1 ] ; then 
+    /bin/systemctl daemon-reload >/dev/null 2>&1 || :
+fi
+
+%preun gmetad
+if [ $1 -eq 0 ] ; then
+    /bin/systemctl --no-reload disable gmetad.service > /dev/null 2>&1 || :
+    /bin/systemctl stop gmetad.service > /dev/null 2>&1 || :
+fi
+
+%postun gmetad
+/bin/systemctl daemon-reload >/dev/null 2>&1 || :
+if [ $1 -ge 1 ] ; then
+    /bin/systemctl try-restart gmetad.service >/dev/null 2>&1 || :
 fi
 
 %post devel -p /sbin/ldconfig
 
 %postun devel -p /sbin/ldconfig
 
+
+### A sysv => systemd migration contains all of the same scriptlets as a
+### systemd package.  These are additional scriptlets
+
+# Note: the NEVR in trigger scripts should all be the version in
+# which the package switched to systemd unit files and the comparision
+# should be less than.  Using <= the last version with the sysV script won't
+# work for several reasons:
+# 1) disttag is different between Fedora releases
+# 2) An update in an old Fedora release may create a newer NEVR
+#    Note that this means an update in an older Fedora release must be NEVR
+#    lower than this.  Freezing the version and release of the old package and
+#    using a number after the disttag is one way to do this.  Example:
+#        httpd-1.0-1%{?dist} => httpd-1.0-1%{?dist}.1
+
+%triggerun gmond -- ganglia-gmond < 3.3.7-1
+# Save the current service runlevel info
+# User must manually run systemd-sysv-convert --apply gmond
+# to migrate them to systemd targets
+/usr/bin/systemd-sysv-convert --save gmond >/dev/null 2>&1 ||:
+
+# Run these because the SysV package being removed won't do them
+/sbin/chkconfig --del gmond >/dev/null 2>&1 || :
+/bin/systemctl try-restart gmond.service >/dev/null 2>&1 || :
+
+%triggerun gmetad -- ganglia-gmetad < 3.3.7-1
+# Save the current service runlevel info
+# User must manually run systemd-sysv-convert --apply gmetad
+# to migrate them to systemd targets
+/usr/bin/systemd-sysv-convert --save gmetad >/dev/null 2>&1 ||:
+
+# Run these because the SysV package being removed won't do them
+/sbin/chkconfig --del gmetad >/dev/null 2>&1 || :
+/bin/systemctl try-restart gmetad.service >/dev/null 2>&1 || :
 
 %files
 %defattr(-,root,root,-)
@@ -229,15 +293,15 @@ fi
 %dir %{_libdir}/ganglia
 %{_libdir}/ganglia/*.so
 %exclude %{_libdir}/ganglia/modpython.so
-%{_bindir}/ganglia-config
 
 %files gmetad
 %defattr(-,root,root,-)
 %dir %{_localstatedir}/lib/%{name}
 %attr(0755,ganglia,ganglia) %{_localstatedir}/lib/%{name}/rrds
 %{_sbindir}/gmetad
+%{_unitdir}/gmetad.service
 %{_mandir}/man1/gmetad.1*
-%{_sysconfdir}/init.d/gmetad
+%{_mandir}/man1/gmetad.py.1*
 %dir %{_sysconfdir}/ganglia
 %config(noreplace) %{_sysconfdir}/ganglia/gmetad.conf
 
@@ -246,7 +310,7 @@ fi
 %{_bindir}/gmetric
 %{_bindir}/gstat
 %{_sbindir}/gmond
-%{_sysconfdir}/init.d/gmond
+%{_unitdir}/gmond.service
 %{_mandir}/man5/gmond.conf.5*
 %{_mandir}/man1/gmond.1*
 %{_mandir}/man1/gstat.1*
@@ -267,18 +331,33 @@ fi
 
 %files devel
 %defattr(-,root,root,-)
+%{_bindir}/ganglia-config
 %{_includedir}/*.h
 %{_libdir}/libganglia*.so
 
 %files web
 %defattr(-,root,root,-)
 %doc web/AUTHORS web/COPYING
-%config(noreplace) %{_sysconfdir}/%{name}/conf.php
-%attr(0640,root,apache) %config(noreplace) %{_sysconfdir}/%{name}/private_clusters
+%config(noreplace) %{_sysconfdir}/%{name}/conf_default.php
+#%attr(0640,root,apache) %config(noreplace) %{_sysconfdir}/%{name}/private_clusters
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %{_datadir}/%{name}
 
 %changelog
+* Fri May 11 2012 Jon Ciesla <limburgher@gmail.com> - 3.3.7-2
+- scriptlet corrections.
+
+* Mon May 07 2012 Terje Rosten <terje.rosten@ntnu.no> - 3.3.7-1
+- Update to 3.3.7
+- Split buildreq/req
+- Remove svn tag
+- Fix src url
+- Remove patches now upstream
+- More man pages
+- Move web config
+- Move ganglia-config to -devel
+- Systemd support
+
 * Fri Feb 10 2012 Petr Pisar <ppisar@redhat.com> - 3.1.7-6
 - Rebuild against PCRE 8.30
 
