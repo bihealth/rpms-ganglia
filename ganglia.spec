@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.3.7
-Release:            3%{?dist}
+Release:            4%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -36,6 +36,7 @@ Group:              Applications/Internet
 Requires:           rrdtool
 Requires:           php
 Requires:           php-gd
+Requires:           php-ZendFramework
 Requires:           %{name}-gmetad = %{version}-%{release}
 
 %description web
@@ -202,6 +203,10 @@ make install DESTDIR=$RPM_BUILD_ROOT
 rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
 rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/{Makefile.am,version.php.in}
 
+#use system php-ZendFramework
+rm -rf $RPM_BUILD_ROOT/usr/share/ganglia/lib/Zend
+ln -s /usr/share/php/Zend $RPM_BUILD_ROOT/usr/share/ganglia/lib/Zend
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -250,6 +255,11 @@ fi
 %post devel -p /sbin/ldconfig
 
 %postun devel -p /sbin/ldconfig
+
+%post web
+if [ ! -L /usr/share/ganglia/lib/Zend ]; then
+  ln -s /usr/share/php/Zend /usr/share/ganglia/lib/Zend
+fi
 
 
 ### A sysv => systemd migration contains all of the same scriptlets as a
@@ -347,6 +357,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Mon May 14 2012 Jon Ciesla <limburgher@gmail.com> - 3.3.7-4
+- Unbundle Zend.
+
 * Fri May 11 2012 Terje Rosten <terje.rosten@ntnu.no> - 3.3.7-3
 - Fix web frontend
 
