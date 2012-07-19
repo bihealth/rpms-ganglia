@@ -1,6 +1,6 @@
 Name:               ganglia
 Version:            3.3.7
-Release:            4%{?dist}
+Release:            5%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 
 Group:              Applications/Internet
@@ -357,6 +357,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Thu Jul 19 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.3.7-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
 * Mon May 14 2012 Jon Ciesla <limburgher@gmail.com> - 3.3.7-4
 - Unbundle Zend.
 
