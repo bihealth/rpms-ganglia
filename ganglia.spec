@@ -1,19 +1,30 @@
-Name:               ganglia
-Version:            3.3.7
-Release:            5%{?dist}
-Summary:            Ganglia Distributed Monitoring System
+%global gangver     3.5.0
+%global webver      3.5.4
 
+%if 0%{?fedora} >= 18
+%global systemd     1
+%else
+%global systemd     0
+%endif
+
+Name:               ganglia
+Version:            %{gangver}
+Release:            1%{?dist}
+Summary:            Ganglia Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
 Source0:            http://downloads.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
-Source1:            gmond.service
-Source2:            gmetad.service
-Patch0:             diskusage-pcre.patch
-Patch2:             diskmetrics.patch
+Source1:            http://downloads.sourceforge.net/sourceforge/%{name}/%{name}-web-%{webver}.tar.gz
+Source2:            gmond.service
+Source3:            gmetad.service
+Source4:            ganglia-httpd24.conf.d
+Source5:            ganglia-httpd.conf.d
+Source6:            conf.php
 Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-
+%if 0%{?systemd}
 BuildRequires:      systemd-units
+%endif
 BuildRequires:      rrdtool-devel
 BuildRequires:      apr-devel >= 1
 BuildRequires:      libpng-devel
@@ -33,11 +44,12 @@ well-defined XML format.
 %package web
 Summary:            Ganglia Web Frontend
 Group:              Applications/Internet
+Version:            %{webver}
 Requires:           rrdtool
 Requires:           php
 Requires:           php-gd
 Requires:           php-ZendFramework
-Requires:           %{name}-gmetad = %{version}-%{release}
+Requires:           %{name}-gmetad = %{gangver}-%{release}
 
 %description web
 This package provides a web frontend to display the XML tree published by
@@ -47,14 +59,16 @@ written in the PHP4 language.
 %package gmetad
 Summary:            Ganglia Metadata collection daemon
 Group:              Applications/Internet
-Requires:           %{name} = %{version}-%{release}
-# This is actually needed for the %triggerun script but Requires(triggerun)
-# is not valid.  We can use %post because this particular %triggerun script
-# should fire just after this package is installed.
-Requires(post):     systemd-sysv
-Requires(post):     systemd-units
-Requires(preun):    systemd-units
-Requires(postun):   systemd-units
+Requires:           %{name} = %{gangver}-%{release}
+%if 0%{?systemd}
+Requires(post):     systemd
+Requires(preun):    systemd
+Requires(postun):   systemd
+%else
+Requires(post):     /sbin/chkconfig
+Requires(preun):    /sbin/chkconfig
+Requires(preun):    /sbin/service
+%endif #systemd
 
 %description gmetad
 Ganglia is a scalable, real-time monitoring and execution environment
@@ -67,14 +81,16 @@ to form a monitoring grid. It also keeps metric history using rrdtool.
 %package gmond
 Summary:            Ganglia Monitoring daemon
 Group:              Applications/Internet
-Requires:           %{name} = %{version}-%{release}
-# This is actually needed for the %triggerun script but Requires(triggerun)
-# is not valid.  We can use %post because this particular %triggerun script
-# should fire just after this package is installed.
-Requires(post):     systemd-sysv
-Requires(post):     systemd-units
-Requires(preun):    systemd-units
-Requires(postun):   systemd-units
+Requires:           %{name} = %{gangver}-%{release}
+%if 0%{?systemd}
+Requires(post):     systemd
+Requires(preun):    systemd
+Requires(postun):   systemd
+%else
+Requires(post):     /sbin/chkconfig
+Requires(preun):    /sbin/chkconfig
+Requires(preun):    /sbin/service
+%endif #systemd
 
 %description gmond
 Ganglia is a scalable, real-time monitoring and execution environment
@@ -101,7 +117,7 @@ can be loaded via the DSO at gmond daemon start time.
 %package devel
 Summary:            Ganglia Library
 Group:              Applications/Internet
-Requires:           %{name} = %{version}-%{release}
+Requires:           %{name} = %{gangver}-%{release}
 
 %description devel
 The Ganglia Monitoring Core library provides a set of functions that
@@ -109,10 +125,9 @@ programmers can use to build scalable cluster or grid applications
 
 %prep
 %setup -q
-%patch0 -p1
-%patch2 -p1
-## Hey, those shouldn't be executable...
-chmod -x lib/*.{h,x}
+# web part
+%setup -q -T -D -a 1
+mv ganglia-web-%{webver} web
 
 %build
 %configure \
@@ -123,60 +138,41 @@ chmod -x lib/*.{h,x}
     --enable-shared \
     --sysconfdir=%{_sysconfdir}/ganglia
 
+# Remove rpaths
+%{__sed} -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' libtool
+%{__sed} -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
+
 ## Default to run as user ganglia instead of nobody
 %{__perl} -pi.orig -e 's|nobody|ganglia|g' \
     gmond/gmond.conf.html ganglia.html gmond/conf.pod
 
+%{__perl} -pi.orig -e 's|.*setuid_username.*|setuid_username ganglia|' \
+    gmetad/gmetad.conf.in
+
 ## Don't have initscripts turn daemons on by default
-%{__perl} -pi.orig -e 's|2345|-|g' \
-    gmond/gmond.init gmetad/gmetad.init
+%{__perl} -pi.orig -e 's|2345|-|g' gmond/gmond.init gmetad/gmetad.init
 
 make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make install DESTDIR=$RPM_BUILD_ROOT 
 
-## Put web files in place
-mkdir -p $RPM_BUILD_ROOT/%{_datadir}/%{name}
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}
-cp -rp web/* $RPM_BUILD_ROOT%{_datadir}/%{name}/
-mv $RPM_BUILD_ROOT%{_datadir}/%{name}/conf_default.php $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/
-ln -s ../../..%{_sysconfdir}/%{name}/conf_default.php \
-    $RPM_BUILD_ROOT%{_datadir}/%{name}/conf_default.php
-cat << __EOF__ > $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/%{name}.conf
-  #
-  # Ganglia monitoring system php web frontend
-  #
-  
-  Alias /%{name} %{_datadir}/%{name}
-
-  <Location /%{name}>
-    Order deny,allow
-    Deny from all
-    Allow from 127.0.0.1
-    Allow from ::1
-    # Allow from .example.com
-  </Location>
-__EOF__
+make install DESTDIR=$RPM_BUILD_ROOT
 
 ## Create directory structures
-mkdir -p $RPM_BUILD_ROOT%{_unitdir}
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d
 mkdir -p $RPM_BUILD_ROOT%{_libdir}/ganglia/python_modules
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/%{name}/rrds
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/%{name}/conf
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/%{name}/dwoo/cache
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/%{name}/dwoo/compiled
-mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
-mkdir -p $RPM_BUILD_ROOT%{_mandir}/man5
-## Put files in place
-install -p -m 0644 %{SOURCE1} %{buildroot}%{_unitdir}/gmond.service
-install -p -m 0644 %{SOURCE2} %{buildroot}%{_unitdir}/gmetad.service
-cp -p gmond/gmond.conf.5 $RPM_BUILD_ROOT%{_mandir}/man5/gmond.conf.5
-cp -p gmetad/gmetad.conf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/gmetad.conf
-cp -p mans/*.1 $RPM_BUILD_ROOT%{_mandir}/man1/
+mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/%{name}/{rrds,conf}
+mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/%{name}/dwoo/{cache,compiled}
+
+## Install services
+%if 0%{?systemd}
+install -Dp -m 0644 %{SOURCE2} %{buildroot}%{_unitdir}/gmond.service
+install -Dp -m 0644 %{SOURCE3} %{buildroot}%{_unitdir}/gmetad.service
+%else
+install -Dp -m 0755 gmond/gmond.init $RPM_BUILD_ROOT%{_sysconfdir}/init.d/gmond
+install -Dp -m 0755 gmetad/gmetad.init $RPM_BUILD_ROOT%{_sysconfdir}/init.d/gmetad
+%endif # systemd
+
 ## Build default gmond.conf from gmond using the '-t' flag
 gmond/gmond -t | %{__perl} -pe 's|nobody|ganglia|g' > $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/gmond.conf
 
@@ -185,27 +181,49 @@ gmond/gmond -t | %{__perl} -pe 's|nobody|ganglia|g' > $RPM_BUILD_ROOT%{_sysconfd
 cp -p gmond/python_modules/conf.d/*.pyconf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/
 cp -p gmond/modules/conf.d/*.conf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/
 cp -p gmond/python_modules/*/*.py $RPM_BUILD_ROOT%{_libdir}/ganglia/python_modules/
-# Don't install the example modules
-rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/example.conf
-rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/example.pyconf
-# Don't install the status modules
-rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/modgstatus.conf
-# Clean up the .conf.in files
-rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/*.conf.in
-## Disable the diskusage module until it is configured properly
-#mv $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf.off
-# Don't install Makefile* in the web dir
-rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/Makefile*
 
-## Install binaries
-make install DESTDIR=$RPM_BUILD_ROOT
+## Web bits
+mkdir -p $RPM_BUILD_ROOT/%{_datadir}/%{name}
+cp -rp web/* $RPM_BUILD_ROOT%{_datadir}/%{name}/
+install -p -m 0644 %{SOURCE6} %{buildroot}%{_sysconfdir}/ganglia/conf.php
+ln -s ../../..%{_sysconfdir}/%{name}/conf.php \
+    $RPM_BUILD_ROOT%{_datadir}/%{name}/conf.php
+
+%if 0%{?fedora} >= 18
+install -Dp -m 0644 %{SOURCE4} %{buildroot}%{_sysconfdir}/httpd/conf.d/%{name}.conf
+%else
+install -Dp -m 0644 %{SOURCE5} %{buildroot}%{_sysconfdir}/httpd/conf.d/%{name}.conf
+%endif
+
+## Various clean up after install:
+
+## Don't install the status modules and example.conf
+rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/{modgstatus,example}.conf
+
+## Disable the diskusage module until it is configured properly
+## mv $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf \
+##   $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf.off
+
+## Remove unwanted files from web dir
+rm -rf $RPM_BUILD_ROOT%{_datadir}/%{name}/{Makefile*,debian,ganglia-web.spec*,ganglia-web}
+rm -rf $RPM_BUILD_ROOT%{_datadir}/%{name}/{conf_default.php.in,version.php.in}
+
+## Included as doc
+rm -rf $RPM_BUILD_ROOT%{_datadir}/%{name}/{README,TODO,AUTHORS,COPYING}
+
 ## House cleaning
 rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
-rm -f $RPM_BUILD_ROOT%{_datadir}/%{name}/{Makefile.am,version.php.in}
 
-#use system php-ZendFramework
+## Use system php-ZendFramework
 rm -rf $RPM_BUILD_ROOT/usr/share/ganglia/lib/Zend
 ln -s /usr/share/php/Zend $RPM_BUILD_ROOT/usr/share/ganglia/lib/Zend
+
+# Remove execute bit
+chmod 0644 $RPM_BUILD_ROOT%{_datadir}/%{name}/header.php
+chmod 0644 $RPM_BUILD_ROOT%{_libdir}/%{name}/python_modules/*.py
+
+# Remove shebang
+%{__sed} -i '1{\@^#!@d}' $RPM_BUILD_ROOT%{_libdir}/%{name}/python_modules/*.py
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -218,39 +236,48 @@ rm -rf $RPM_BUILD_ROOT
 
 %post -p /sbin/ldconfig
 
+%if 0%{?systemd}
 %post gmond
-if [ $1 -eq 1 ] ; then 
-    /bin/systemctl daemon-reload >/dev/null 2>&1 || :
+%systemd_post gmond.service
+
+%preun gmond
+%systemd_preun gmond.service
+
+%postun gmond
+%systemd_postun_with_restart gmond.service
+
+%post gmetad
+%systemd_post gmetad.service
+
+%preun gmetad
+%systemd_preun gmetad.service
+
+%postun gmetad
+%systemd_postun_with_restart gmetad.service
+
+%else 
+
+%post gmond
+/sbin/chkconfig --add gmond
+
+%post gmetad
+/sbin/chkconfig --add gmetad
+
+%preun gmetad
+if [ "$1" = 0 ]
+then
+  /sbin/service gmetad stop >/dev/null 2>&1 || :
+  /sbin/chkconfig --del gmetad
 fi
 
 %preun gmond
-if [ $1 -eq 0 ] ; then
-    /bin/systemctl --no-reload disable gmond.service > /dev/null 2>&1 || :
-    /bin/systemctl stop gmond.service > /dev/null 2>&1 || :
+if [ "$1" = 0 ]
+then
+  /sbin/service gmond stop >/dev/null 2>&1 || :
+  /sbin/chkconfig --del gmond
 fi
 
-%postun gmond
-/bin/systemctl daemon-reload >/dev/null 2>&1 || :
-if [ $1 -ge 1 ] ; then
-    /bin/systemctl try-restart gmond.service >/dev/null 2>&1 || :
-fi
-
-%post gmetad
-if [ $1 -eq 1 ] ; then 
-    /bin/systemctl daemon-reload >/dev/null 2>&1 || :
-fi
-
-%preun gmetad
-if [ $1 -eq 0 ] ; then
-    /bin/systemctl --no-reload disable gmetad.service > /dev/null 2>&1 || :
-    /bin/systemctl stop gmetad.service > /dev/null 2>&1 || :
-fi
-
-%postun gmetad
-/bin/systemctl daemon-reload >/dev/null 2>&1 || :
-if [ $1 -ge 1 ] ; then
-    /bin/systemctl try-restart gmetad.service >/dev/null 2>&1 || :
-fi
+%endif # systemd
 
 %post devel -p /sbin/ldconfig
 
@@ -260,7 +287,6 @@ fi
 if [ ! -L /usr/share/ganglia/lib/Zend ]; then
   ln -s /usr/share/php/Zend /usr/share/ganglia/lib/Zend
 fi
-
 
 ### A sysv => systemd migration contains all of the same scriptlets as a
 ### systemd package.  These are additional scriptlets
@@ -276,6 +302,7 @@ fi
 #    using a number after the disttag is one way to do this.  Example:
 #        httpd-1.0-1%{?dist} => httpd-1.0-1%{?dist}.1
 
+%if 0%{?systemd}
 %triggerun gmond -- ganglia-gmond < 3.3.7-1
 # Save the current service runlevel info
 # User must manually run systemd-sysv-convert --apply gmond
@@ -295,6 +322,7 @@ fi
 # Run these because the SysV package being removed won't do them
 /sbin/chkconfig --del gmetad >/dev/null 2>&1 || :
 /bin/systemctl try-restart gmetad.service >/dev/null 2>&1 || :
+%endif # systemd
 
 %files
 %defattr(-,root,root,-)
@@ -309,7 +337,11 @@ fi
 %dir %{_localstatedir}/lib/%{name}
 %attr(0755,ganglia,ganglia) %{_localstatedir}/lib/%{name}/rrds
 %{_sbindir}/gmetad
+%if 0%{?systemd}
 %{_unitdir}/gmetad.service
+%else
+%{_sysconfdir}/init.d/gmetad
+%endif
 %{_mandir}/man1/gmetad.1*
 %{_mandir}/man1/gmetad.py.1*
 %dir %{_sysconfdir}/ganglia
@@ -320,7 +352,11 @@ fi
 %{_bindir}/gmetric
 %{_bindir}/gstat
 %{_sbindir}/gmond
+%if 0%{?systemd}
 %{_unitdir}/gmond.service
+%else
+%{_sysconfdir}/init.d/gmond
+%endif
 %{_mandir}/man5/gmond.conf.5*
 %{_mandir}/man1/gmond.1*
 %{_mandir}/man1/gstat.1*
@@ -347,8 +383,8 @@ fi
 
 %files web
 %defattr(-,root,root,-)
-%doc web/AUTHORS web/COPYING
-%config(noreplace) %{_sysconfdir}/%{name}/conf_default.php
+%doc web/AUTHORS web/COPYING web/README web/TODO
+%config(noreplace) %{_sysconfdir}/%{name}/conf.php
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %{_datadir}/%{name}
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/conf
@@ -357,6 +393,17 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Sun Jan 06 2013 Terje Rosten <terje.rosten@ntnu.no> - 3.5.0-1
+- 3.5.0
+
+* Tue Dec 18 2012 Terje Rosten <terje.rosten@ntnu.no> - 3.4.0-1
+- 3.4.0
+- Add ganglia-web 3.5.4 tarball
+- Add support for non systemd builds
+- Support httpd >= 2.4
+- Use new systemd macros
+- Various clean up (rpmlint)
+
 * Thu Jul 19 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.3.7-5
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
 
