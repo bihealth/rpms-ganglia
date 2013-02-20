@@ -1,5 +1,5 @@
 %global gangver     3.5.0
-%global webver      3.5.4
+%global webver      3.5.7
 
 %if 0%{?fedora} >= 18
 %global systemd     1
@@ -9,7 +9,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            2%{?dist}
+Release:            3%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -21,6 +21,8 @@ Source3:            gmetad.service
 Source4:            ganglia-httpd24.conf.d
 Source5:            ganglia-httpd.conf.d
 Source6:            conf.php
+Patch0:             ganglia-web-3.5.7-xss.patch
+Patch1:             ganglia-web-3.5.7-statedir.patch
 Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %if 0%{?systemd}
 BuildRequires:      systemd-units
@@ -34,6 +36,7 @@ BuildRequires:      expat-devel
 BuildRequires:      python-devel
 BuildRequires:      freetype-devel
 BuildRequires:      pcre-devel
+BuildRequires:      /usr/bin/pod2man
 
 
 %description
@@ -128,6 +131,9 @@ programmers can use to build scalable cluster or grid applications
 # web part
 %setup -q -T -D -a 1
 mv ganglia-web-%{webver} web
+cd web
+%patch0 -p1
+%patch1 -p1
 
 %build
 %configure \
@@ -393,6 +399,10 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Wed Feb 20 2013 Terje Rosten <terje.rosten@ntnu.no> - 3.5.0-3
+- Update to ganglia-web 3.5.7
+- Add extra patch for XSS security
+
 * Wed Feb 13 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.5.0-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
 

@@ -1,0 +1,50 @@
+diff --git a/get_context.php b/get_context.php
+index c7c3baf..9b5956a 100644
+--- a/get_context.php
++++ b/get_context.php
+@@ -91,7 +91,7 @@ if ( isset($_GET['max_graphs']) && is_numeric($_GET['max_graphs'] ) )
+ 
+ /////////////////////////////////////////////////////////////////////////////
+ 
+-$user['selected_tab'] = isset($_GET["tab"]) ? rawurldecode($_GET["tab"]) : 'm';
++$user['selected_tab'] = isset($_GET["tab"]) ? clean_string( rawurldecode($_GET["tab"]) ) : 'm';
+  
+ $user['compare_hosts'] = ($user['selected_tab'] == 'ch') ? 1 : NULL;
+ 
+diff --git a/graph_all_periods.php b/graph_all_periods.php
+index 605e0b5..c18854d 100644
+--- a/graph_all_periods.php
++++ b/graph_all_periods.php
+@@ -120,8 +120,8 @@ if ( ! isset($_GET['embed'] ) ) {
+ ?>
+ <script type="text/javascript">
+   var default_time = 'hour';
+-  var metric = "<?php if (isset($_GET['g'])) echo $_GET['g']; else echo $_GET['m']; ?>";
+-  var base_url = "<?php print 'graph.php?flot=1&amp;' . $_GET['m'] . $query_string ?>" + "&amp;r=" + default_time;
++  var metric = "<?php if (isset($_GET['g'])) echo htmlentities($_GET['g']); else echo htmlentities($_GET['m']); ?>";
++  var base_url = "<?php print 'graph.php?flot=1&amp;' . htmlentities($_GET['m']) . $query_string ?>" + "&amp;r=" + default_time;
+ </script>
+ <script type="text/javascript" src="js/create-flot-graphs.js"></script>
+ <?php
+diff --git a/tasseo.php b/tasseo.php
+index e9494cd..1a9058c 100644
+--- a/tasseo.php
++++ b/tasseo.php
+@@ -51,7 +51,7 @@ if ( ! isset($_REQUEST['view_name']) ) {
+   ?>
+ <html>
+ <head>
+-<title>Live Dashboard for <?php print $user['view_name']; ?></title>
++<title>Live Dashboard for <?php print htmlentities($user['view_name']); ?></title>
+ <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+ <link rel="stylesheet" type="text/css" href="css/tasseo.css" />
+ <script type="text/javascript" src="js/jquery-1.9.1.min.js"></script>
+@@ -60,7 +60,7 @@ if ( ! isset($_REQUEST['view_name']) ) {
+ </head>
+ <body>
+    <div id='title'>
+-      <span><?php print $user['view_name']; ?></span>
++      <span><?php print htmlentities($user['view_name']); ?></span>
+       <div id='toolbar'>
+         <ul class='timepanel'>
+           <li class='timepanel live selected'>
