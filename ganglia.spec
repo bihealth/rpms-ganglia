@@ -7,9 +7,13 @@
 %global systemd     0
 %endif
 
+%if 0%{?fedora} >= 19
+%global _hardened_build 1
+%endif
+
 Name:               ganglia
 Version:            %{gangver}
-Release:            3%{?dist}
+Release:            4%{?dist}
 Summary:            Ganglia Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -399,6 +403,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Thu May 09 2013 Terje Rosten <terje.rosten@ntnu.no> - 3.5.0-4
+- Hardened build in FC > 18.
+
 * Wed Feb 20 2013 Terje Rosten <terje.rosten@ntnu.no> - 3.5.0-3
 - Update to ganglia-web 3.5.7
 - Add extra patch for XSS security
