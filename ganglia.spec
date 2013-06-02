@@ -1,5 +1,5 @@
-%global gangver     3.5.0
-%global webver      3.5.7
+%global gangver     3.6.0
+%global webver      3.5.8
 
 %if 0%{?fedora} >= 18
 %global systemd     1
@@ -13,8 +13,8 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            4%{?dist}
-Summary:            Ganglia Distributed Monitoring System
+Release:            1%{?dist}
+Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
@@ -25,7 +25,7 @@ Source3:            gmetad.service
 Source4:            ganglia-httpd24.conf.d
 Source5:            ganglia-httpd.conf.d
 Source6:            conf.php
-Patch0:             ganglia-web-3.5.7-xss.patch
+Patch0:             ganglia-web-3.5.8-xss.patch
 Patch1:             ganglia-web-3.5.7-statedir.patch
 Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %if 0%{?systemd}
@@ -36,6 +36,7 @@ BuildRequires:      apr-devel >= 1
 BuildRequires:      libpng-devel
 BuildRequires:      libart_lgpl-devel
 BuildRequires:      libconfuse-devel
+BuildRequires:      libmemcached-devel
 BuildRequires:      expat-devel
 BuildRequires:      python-devel
 BuildRequires:      freetype-devel
@@ -132,6 +133,10 @@ programmers can use to build scalable cluster or grid applications
 
 %prep
 %setup -q
+# fix broken systemd support
+install -m 0644 %{SOURCE2} gmond/gmond.service.in
+install -m 0644 %{SOURCE3} gmetad/gmetad.service.in
+
 # web part
 %setup -q -T -D -a 1
 mv ganglia-web-%{webver} web
@@ -144,6 +149,7 @@ cd web
     --enable-setuid=ganglia \
     --enable-setgid=ganglia \
     --with-gmetad \
+    --with-memcached \
     --disable-static \
     --enable-shared \
     --sysconfdir=%{_sysconfdir}/ganglia
@@ -184,7 +190,8 @@ install -Dp -m 0755 gmetad/gmetad.init $RPM_BUILD_ROOT%{_sysconfdir}/init.d/gmet
 %endif # systemd
 
 ## Build default gmond.conf from gmond using the '-t' flag
-gmond/gmond -t | %{__perl} -pe 's|nobody|ganglia|g' > $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/gmond.conf
+LD_LIBRARY_PATH=lib/.libs gmond/gmond -t | %{__perl} -pe 's|nobody|ganglia|g' \
+    > $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/gmond.conf
 
 ## Python bits
 # Copy the python metric modules and .conf files
@@ -231,6 +238,8 @@ ln -s /usr/share/php/Zend $RPM_BUILD_ROOT/usr/share/ganglia/lib/Zend
 # Remove execute bit
 chmod 0644 $RPM_BUILD_ROOT%{_datadir}/%{name}/header.php
 chmod 0644 $RPM_BUILD_ROOT%{_libdir}/%{name}/python_modules/*.py
+chmod 0644 $RPM_BUILD_ROOT%{_datadir}/%{name}/css/smoothness/jquery-ui-1.10.2.custom.css
+chmod 0644 $RPM_BUILD_ROOT%{_datadir}/%{name}/css/smoothness/jquery-ui-1.10.2.custom.min.css
 
 # Remove shebang
 %{__sed} -i '1{\@^#!@d}' $RPM_BUILD_ROOT%{_libdir}/%{name}/python_modules/*.py
@@ -245,6 +254,7 @@ rm -rf $RPM_BUILD_ROOT
 /sbin/ldconfig
 
 %post -p /sbin/ldconfig
+%postun -p /sbin/ldconfig
 
 %if 0%{?systemd}
 %post gmond
@@ -403,6 +413,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Sun Jun 02 2013 Terje Rosten <terje.rosten@ntnu.no> - 3.6.0-1
+- Update to ganglia 3.6.0 and ganglia-web 3.5.8
+
 * Thu May 09 2013 Terje Rosten <terje.rosten@ntnu.no> - 3.5.0-4
 - Hardened build in FC > 18.
 
