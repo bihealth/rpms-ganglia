@@ -1,5 +1,5 @@
 %global gangver     3.6.0
-%global webver      3.5.8
+%global webver      3.5.10
 
 %if 0%{?fedora} >= 18
 %global systemd     1
@@ -13,7 +13,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            2%{?dist}
+Release:            3%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -27,6 +27,7 @@ Source5:            ganglia-httpd.conf.d
 Source6:            conf.php
 Patch0:             ganglia-web-3.5.8-xss.patch
 Patch1:             ganglia-web-3.5.7-statedir.patch
+Patch2:             ganglia-web-3.5.10-cve-2013-6395.patch
 Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %if 0%{?systemd}
 BuildRequires:      systemd-units
@@ -143,6 +144,7 @@ mv ganglia-web-%{webver} web
 cd web
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 %build
 %configure \
@@ -413,6 +415,10 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Wed Nov 30 2013 Terje Rosten <terje.rosten@ntnu.no> - 3.6.0-3
+- Update to ganglia-web 3.5.10
+- Add patch as workaround for CVE-2013-6395 (bz #1034527)
+
 * Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.6.0-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
 
