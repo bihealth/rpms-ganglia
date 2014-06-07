@@ -13,7 +13,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            4%{?dist}
+Release:            5%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -411,6 +411,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Sat Jun 07 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.6.0-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
+
 * Sat Jan 11 2014 Terje Rosten <terje.rosten@ntnu.no> - 3.6.0-4
 - Update to ganglia-web 3.5.12
 
