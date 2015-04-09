@@ -1,34 +1,27 @@
-%global gangver     3.6.0
-%global webver      3.5.12
+%global gangver     3.7.1
+%global webver      3.6.2
 
-%if 0%{?fedora} >= 18
-%global systemd     1
-%else
-%global systemd     0
-%endif
-
-%if 0%{?fedora} >= 19
+%global systemd         1
 %global _hardened_build 1
-%endif
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            6%{?dist}
+Release:            1%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
-Source0:            http://downloads.sourceforge.net/sourceforge/%{name}/%{name}-%{version}.tar.gz
-Source1:            http://downloads.sourceforge.net/sourceforge/%{name}/%{name}-web-%{webver}.tar.gz
+Source0:            http://downloads.sourceforge.net/sourceforge/ganglia/ganglia-%{version}.tar.gz
+Source1:            http://downloads.sourceforge.net/project/ganglia/ganglia-web/%{webver}/ganglia-web-%{webver}.tar.gz
 Source2:            gmond.service
 Source3:            gmetad.service
 Source4:            ganglia-httpd24.conf.d
 Source5:            ganglia-httpd.conf.d
 Source6:            conf.php
 Patch0:             ganglia-web-3.5.7-statedir.patch
-Buildroot:          %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Patch1:             ganglia-3.7.1-py-syntax.patch
 %if 0%{?systemd}
-BuildRequires:      systemd-units
+BuildRequires:      systemd
 %endif
 BuildRequires:      rrdtool-devel
 BuildRequires:      apr-devel >= 1
@@ -41,7 +34,6 @@ BuildRequires:      python-devel
 BuildRequires:      freetype-devel
 BuildRequires:      pcre-devel
 BuildRequires:      /usr/bin/pod2man
-
 
 %description
 Ganglia is a scalable, real-time monitoring and execution environment
@@ -58,7 +50,7 @@ Requires:           php-gd
 Requires:           php-ZendFramework
 Requires:           %{name}-gmetad = %{gangver}-%{release}
 
-%description web
+%description        web
 This package provides a web frontend to display the XML tree published by
 ganglia, and to provide historical graphs of collected metrics. This website is
 written in the PHP4 language.
@@ -77,7 +69,7 @@ Requires(preun):    /sbin/chkconfig
 Requires(preun):    /sbin/service
 %endif #systemd
 
-%description gmetad
+%description        gmetad
 Ganglia is a scalable, real-time monitoring and execution environment
 with all execution requests and statistics expressed in an open
 well-defined XML format.
@@ -85,7 +77,7 @@ well-defined XML format.
 This gmetad daemon aggregates monitoring data from several clusters
 to form a monitoring grid. It also keeps metric history using rrdtool.
 
-%package gmond
+%package            gmond
 Summary:            Ganglia Monitoring daemon
 Group:              Applications/Internet
 Requires:           %{name} = %{gangver}-%{release}
@@ -99,7 +91,7 @@ Requires(preun):    /sbin/chkconfig
 Requires(preun):    /sbin/service
 %endif #systemd
 
-%description gmond
+%description        gmond
 Ganglia is a scalable, real-time monitoring and execution environment
 with all execution requests and statistics expressed in an open
 well-defined XML format.
@@ -107,13 +99,13 @@ well-defined XML format.
 This gmond daemon provides the ganglia service within a single cluster or
 Multicast domain.
 
-%package gmond-python
+%package            gmond-python
 Summary:            Ganglia Monitor daemon python DSO and metric modules
 Group:              Applications/Internet
 Requires:           ganglia-gmond
 Requires:           python
 
-%description gmond-python
+%description        gmond-python
 Ganglia is a scalable, real-time monitoring and execution environment
 with all execution requests and statistics expressed in an open
 well-defined XML format.
@@ -121,12 +113,12 @@ well-defined XML format.
 This package provides the gmond python DSO and python gmond modules, which
 can be loaded via the DSO at gmond daemon start time.
 
-%package devel
+%package            devel
 Summary:            Ganglia Library
 Group:              Applications/Internet
 Requires:           %{name} = %{gangver}-%{release}
 
-%description devel
+%description        devel
 The Ganglia Monitoring Core library provides a set of functions that
 programmers can use to build scalable cluster or grid applications
 
@@ -138,6 +130,7 @@ install -m 0644 %{SOURCE3} gmetad/gmetad.service.in
 
 # web part
 %setup -q -T -D -a 1
+%patch1 -p1
 mv ganglia-web-%{webver} web
 cd web
 %patch0 -p1
@@ -169,8 +162,6 @@ cd web
 make %{?_smp_mflags}
 
 %install
-rm -rf $RPM_BUILD_ROOT
-
 make install DESTDIR=$RPM_BUILD_ROOT
 
 ## Create directory structures
@@ -240,10 +231,7 @@ chmod 0644 $RPM_BUILD_ROOT%{_datadir}/%{name}/css/smoothness/jquery-ui-1.10.2.cu
 chmod 0644 $RPM_BUILD_ROOT%{_datadir}/%{name}/css/smoothness/jquery-ui-1.10.2.custom.min.css
 
 # Remove shebang
-%{__sed} -i '1{\@^#!@d}' $RPM_BUILD_ROOT%{_libdir}/%{name}/python_modules/*.py
-
-%clean
-rm -rf $RPM_BUILD_ROOT
+sed -i '1{\@^#!@d}' $RPM_BUILD_ROOT%{_libdir}/%{name}/python_modules/*.py
 
 %pre
 ## Add the "ganglia" user
@@ -282,15 +270,13 @@ rm -rf $RPM_BUILD_ROOT
 /sbin/chkconfig --add gmetad
 
 %preun gmetad
-if [ "$1" = 0 ]
-then
+if [ "$1" = 0 ]; then
   /sbin/service gmetad stop >/dev/null 2>&1 || :
   /sbin/chkconfig --del gmetad
 fi
 
 %preun gmond
-if [ "$1" = 0 ]
-then
+if [ "$1" = 0 ]; then
   /sbin/service gmond stop >/dev/null 2>&1 || :
   /sbin/chkconfig --del gmond
 fi
@@ -298,7 +284,6 @@ fi
 %endif # systemd
 
 %post devel -p /sbin/ldconfig
-
 %postun devel -p /sbin/ldconfig
 
 %post web
@@ -306,44 +291,7 @@ if [ ! -L /usr/share/ganglia/lib/Zend ]; then
   ln -s /usr/share/php/Zend /usr/share/ganglia/lib/Zend
 fi
 
-### A sysv => systemd migration contains all of the same scriptlets as a
-### systemd package.  These are additional scriptlets
-
-# Note: the NEVR in trigger scripts should all be the version in
-# which the package switched to systemd unit files and the comparision
-# should be less than.  Using <= the last version with the sysV script won't
-# work for several reasons:
-# 1) disttag is different between Fedora releases
-# 2) An update in an old Fedora release may create a newer NEVR
-#    Note that this means an update in an older Fedora release must be NEVR
-#    lower than this.  Freezing the version and release of the old package and
-#    using a number after the disttag is one way to do this.  Example:
-#        httpd-1.0-1%{?dist} => httpd-1.0-1%{?dist}.1
-
-%if 0%{?systemd}
-%triggerun gmond -- ganglia-gmond < 3.3.7-1
-# Save the current service runlevel info
-# User must manually run systemd-sysv-convert --apply gmond
-# to migrate them to systemd targets
-/usr/bin/systemd-sysv-convert --save gmond >/dev/null 2>&1 ||:
-
-# Run these because the SysV package being removed won't do them
-/sbin/chkconfig --del gmond >/dev/null 2>&1 || :
-/bin/systemctl try-restart gmond.service >/dev/null 2>&1 || :
-
-%triggerun gmetad -- ganglia-gmetad < 3.3.7-1
-# Save the current service runlevel info
-# User must manually run systemd-sysv-convert --apply gmetad
-# to migrate them to systemd targets
-/usr/bin/systemd-sysv-convert --save gmetad >/dev/null 2>&1 ||:
-
-# Run these because the SysV package being removed won't do them
-/sbin/chkconfig --del gmetad >/dev/null 2>&1 || :
-/bin/systemctl try-restart gmetad.service >/dev/null 2>&1 || :
-%endif # systemd
-
 %files
-%defattr(-,root,root,-)
 %doc AUTHORS COPYING NEWS README ChangeLog
 %{_libdir}/libganglia*.so.*
 %dir %{_libdir}/ganglia
@@ -351,7 +299,6 @@ fi
 %exclude %{_libdir}/ganglia/modpython.so
 
 %files gmetad
-%defattr(-,root,root,-)
 %dir %{_localstatedir}/lib/%{name}
 %attr(0755,ganglia,ganglia) %{_localstatedir}/lib/%{name}/rrds
 %{_sbindir}/gmetad
@@ -366,7 +313,6 @@ fi
 %config(noreplace) %{_sysconfdir}/ganglia/gmetad.conf
 
 %files gmond
-%defattr(-,root,root,-)
 %{_bindir}/gmetric
 %{_bindir}/gstat
 %{_sbindir}/gmond
@@ -386,7 +332,6 @@ fi
 %exclude %{_sysconfdir}/ganglia/conf.d/modpython.conf
 
 %files gmond-python
-%defattr(-,root,root,-)
 %dir %{_libdir}/ganglia/python_modules/
 %{_libdir}/ganglia/python_modules/*.py*
 %{_libdir}/ganglia/modpython.so*
@@ -394,13 +339,11 @@ fi
 %config(noreplace) %{_sysconfdir}/ganglia/conf.d/modpython.conf
 
 %files devel
-%defattr(-,root,root,-)
 %{_bindir}/ganglia-config
 %{_includedir}/*.h
 %{_libdir}/libganglia*.so
 
 %files web
-%defattr(-,root,root,-)
 %doc web/AUTHORS web/COPYING web/README web/TODO
 %config(noreplace) %{_sysconfdir}/%{name}/conf.php
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
@@ -411,6 +354,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Tue Apr 07 2015 Terje Rosten <terje.rosten@ntnu.no> - 3.7.1-1
+- 3.7.1 & ganglia-web 3.6.2
+
 * Sat Aug 16 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.6.0-6
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_21_22_Mass_Rebuild
 
