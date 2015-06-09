@@ -1,12 +1,12 @@
 %global gangver     3.7.1
-%global webver      3.6.2
+%global webver      3.7.0
 
 %global systemd         1
 %global _hardened_build 1
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            1%{?dist}
+Release:            2%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -354,6 +354,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Tue Jun 09 2015 Terje Rosten <terje.rosten@ntnu.no> - 3.7.1-2
+- ganglia-web 3.7.0
+
 * Tue Apr 07 2015 Terje Rosten <terje.rosten@ntnu.no> - 3.7.1-1
 - 3.7.1 & ganglia-web 3.6.2
 
