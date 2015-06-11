@@ -6,7 +6,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            2%{?dist}
+Release:            3%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -354,6 +354,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Thu Jun 11 2015 Terje Rosten <terje.rosten@ntnu.no> - 3.7.1-3
+- Let gmond service start after network is ready (bz#585891)
+
 * Tue Jun 09 2015 Terje Rosten <terje.rosten@ntnu.no> - 3.7.1-2
 - ganglia-web 3.7.0
 
