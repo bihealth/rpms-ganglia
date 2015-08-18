@@ -1,4 +1,4 @@
-%global gangver     3.7.1
+%global gangver     3.7.2
 %global webver      3.7.0
 
 %global systemd         1
@@ -6,7 +6,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            4%{?dist}
+Release:            1%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -19,7 +19,7 @@ Source4:            ganglia-httpd24.conf.d
 Source5:            ganglia-httpd.conf.d
 Source6:            conf.php
 Patch0:             ganglia-web-3.5.7-statedir.patch
-Patch1:             ganglia-3.7.1-py-syntax.patch
+Patch1:             ganglia-3.7.2-apache.patch
 %if 0%{?systemd}
 BuildRequires:      systemd
 %endif
@@ -128,9 +128,10 @@ programmers can use to build scalable cluster or grid applications
 install -m 0644 %{SOURCE2} gmond/gmond.service.in
 install -m 0644 %{SOURCE3} gmetad/gmetad.service.in
 
+%patch1 -p0
+
 # web part
 %setup -q -T -D -a 1
-%patch1 -p1
 mv ganglia-web-%{webver} web
 cd web
 %patch0 -p1
@@ -354,6 +355,10 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Wed Aug 19 2015 Nick Le Mouton <nick@noodles.net.nz> - 3.7.2-1
+- ganglia 3.7.2
+- fix for apache 2.4.16
+
 * Wed Jun 17 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.7.1-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
 
