@@ -34,6 +34,7 @@ BuildRequires:      python-devel
 BuildRequires:      freetype-devel
 BuildRequires:      pcre-devel
 BuildRequires:      /usr/bin/pod2man
+BuildRequires:      /usr/bin/pod2html
 
 %description
 Ganglia is a scalable, real-time monitoring and execution environment
