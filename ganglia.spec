@@ -6,7 +6,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            1%{?dist}
+Release:            5%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -356,6 +356,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Fri Aug 28 2015 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-5
+- Increase release to 5 to get web subpackage forward
+
 * Wed Aug 19 2015 Nick Le Mouton <nick@noodles.net.nz> - 3.7.2-1
 - ganglia 3.7.2
 - fix for apache 2.4.16
