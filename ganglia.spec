@@ -6,7 +6,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            7%{?dist}
+Release:            8%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -356,6 +356,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Sat Apr 30 2016 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-8
+- rebuild: rrdtool 1.6
+
 * Wed Feb 03 2016 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-7
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
 
