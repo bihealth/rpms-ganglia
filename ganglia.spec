@@ -6,7 +6,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            8%{?dist}
+Release:            9%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -356,6 +356,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Wed Jun 15 2016 Jon Ciesla <limburgher@gmail.com> - 3.7.2-9
+- libconfuse rebuild.
+
 * Sat Apr 30 2016 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-8
 - rebuild: rrdtool 1.6
 
