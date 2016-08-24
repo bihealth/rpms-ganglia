@@ -1,12 +1,12 @@
 %global gangver     3.7.2
-%global webver      3.7.1
+%global webver      3.7.2
 
 %global systemd         1
 %global _hardened_build 1
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            9%{?dist}
+Release:            10%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -356,6 +356,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Wed Aug 24 2016 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-10
+- ganglia-web 3.7.2
+
 * Wed Jun 15 2016 Jon Ciesla <limburgher@gmail.com> - 3.7.2-9
 - libconfuse rebuild.
 
