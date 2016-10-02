@@ -6,7 +6,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            10%{?dist}
+Release:            11%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -118,7 +118,8 @@ can be loaded via the DSO at gmond daemon start time.
 Summary:            Ganglia Library
 Group:              Applications/Internet
 Requires:           %{name} = %{gangver}-%{release}
-
+Requires:           apr-devel
+Requires:           libconfuse-devel
 %description        devel
 The Ganglia Monitoring Core library provides a set of functions that
 programmers can use to build scalable cluster or grid applications
@@ -294,7 +295,8 @@ if [ ! -L /usr/share/ganglia/lib/Zend ]; then
 fi
 
 %files
-%doc AUTHORS COPYING NEWS README ChangeLog
+%license COPYING
+%doc AUTHORS NEWS README ChangeLog
 %{_libdir}/libganglia*.so.*
 %dir %{_libdir}/ganglia
 %{_libdir}/ganglia/*.so
@@ -346,7 +348,8 @@ fi
 %{_libdir}/libganglia*.so
 
 %files web
-%doc web/AUTHORS web/COPYING web/README web/TODO
+%license web/COPYING
+%doc web/AUTHORS web/README web/TODO
 %config(noreplace) %{_sysconfdir}/%{name}/conf.php
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %{_datadir}/%{name}
@@ -356,6 +359,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Sun Oct 02 2016 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-11
+- Subpackage -devel needs apr and confuse devel packages
+
 * Wed Aug 24 2016 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-10
 - ganglia-web 3.7.2
 
