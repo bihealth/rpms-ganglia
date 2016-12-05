@@ -6,7 +6,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            11%{?dist}
+Release:            12%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -20,6 +20,7 @@ Source5:            ganglia-httpd.conf.d
 Source6:            conf.php
 Patch0:             ganglia-web-3.5.7-statedir.patch
 Patch1:             ganglia-3.7.2-apache.patch
+Patch2:             ganglia-3.7.2-sflow.patch
 %if 0%{?systemd}
 BuildRequires:      systemd
 %endif
@@ -131,6 +132,7 @@ install -m 0644 %{SOURCE2} gmond/gmond.service.in
 install -m 0644 %{SOURCE3} gmetad/gmetad.service.in
 
 %patch1 -p0
+%patch2 -p0
 
 # web part
 %setup -q -T -D -a 1
@@ -359,6 +361,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
 
 %changelog
+* Mon Dec 05 2016 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-12
+- Add patch to fix sflow issue (rhbz#1400932), thanks to Glenn L. Jenkins!
+
 * Sun Oct 02 2016 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-11
 - Subpackage -devel needs apr and confuse devel packages
 

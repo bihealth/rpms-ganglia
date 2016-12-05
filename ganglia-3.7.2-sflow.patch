@@ -1,0 +1,13 @@
+--- gmond/sflow.c.orig	2016-12-02 09:56:38.744353600 +0000
++++ gmond/sflow.c	2016-12-02 09:47:45.666353600 +0000
+@@ -303,7 +303,8 @@
+   char mtitle_buf[SFLOW_MAX_METRIC_NAME_LEN];
+   if(ok || sflowCFG.submit_null_str) {
+     set_metric_name_and_title(&mname, &mtitle, mname_buf, mtitle_buf, metric_prefix, tag);
+-    fmsg.id = vmsg.id = gmetric_uint;
++    //fmsg.id = vmsg.id = gmetric_uint;
++    fmsg.id = vmsg.id = gmetric_string;
+     fmsg.Ganglia_metadata_msg_u.gfull.metric.type = "string";
+     vmsg.Ganglia_value_msg_u.gstr.metric_id.name = mname;
+     vmsg.Ganglia_value_msg_u.gstr.str = (ok ? (char *)val : sflowCFG.null_str);
+
