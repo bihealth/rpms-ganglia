@@ -1,0 +1,27 @@
+diff --git a/Makefile b/Makefile
+index cdba3b1..c6f6602 100644
+--- a/Makefile
++++ b/Makefile
+@@ -2,10 +2,10 @@
+ # User configurables:
+ ##########################################################
+ # Location where gweb should be installed to (excluding conf, dwoo dirs).
+-GDESTDIR = /usr/share/ganglia-webfrontend
++GDESTDIR = /usr/share/ganglia
+ 
+ # Location where default apache configuration should be installed to.
+-GCONFDIR = /etc/ganglia-web
++GCONFDIR = /etc/ganglia
+ 
+ # Gweb statedir (where conf dir and Dwoo templates dir are stored)
+ GWEB_STATEDIR = /var/lib/ganglia-web
+@@ -53,8 +53,7 @@ install:	dist-dir
+ 	mkdir -p $(DESTDIR)/$(GWEB_STATEDIR) && \
+ 	rsync -a $(DIST_DIR)/conf $(DESTDIR)/$(GWEB_STATEDIR) && \
+ 	mkdir -p $(DESTDIR)/$(GDESTDIR) && \
+-	rsync --exclude "conf" -a $(DIST_DIR)/* $(DESTDIR)/$(GDESTDIR) && \
+-	chown -R $(APACHE_USER):$(APACHE_USER) $(DESTDIR)/$(GWEB_STATEDIR)
++	rsync --exclude "conf" -a $(DIST_DIR)/* $(DESTDIR)/$(GDESTDIR)
+ 
+ dist-gzip:	dist-dir
+ 	if [ -f $(DIST_TARBALL) ]; then \

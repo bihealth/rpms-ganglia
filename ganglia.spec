@@ -6,7 +6,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            12%{?dist}
+Release:            13%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -18,7 +18,7 @@ Source3:            gmetad.service
 Source4:            ganglia-httpd24.conf.d
 Source5:            ganglia-httpd.conf.d
 Source6:            conf.php
-Patch0:             ganglia-web-3.5.7-statedir.patch
+Patch0:             ganglia-web-3.7.2-path.patch
 Patch1:             ganglia-3.7.2-apache.patch
 Patch2:             ganglia-3.7.2-sflow.patch
 %if 0%{?systemd}
@@ -34,9 +34,9 @@ BuildRequires:      expat-devel
 BuildRequires:      python-devel
 BuildRequires:      freetype-devel
 BuildRequires:      pcre-devel
+BuildRequires:      rsync
 BuildRequires:      /usr/bin/pod2man
 BuildRequires:      /usr/bin/pod2html
-
 %description
 Ganglia is a scalable, real-time monitoring and execution environment
 with all execution requests and statistics expressed in an open
@@ -51,11 +51,10 @@ Requires:           php
 Requires:           php-gd
 Requires:           php-ZendFramework
 Requires:           %{name}-gmetad = %{gangver}-%{release}
-
 %description        web
-This package provides a web frontend to display the XML tree published by
-ganglia, and to provide historical graphs of collected metrics. This website is
-written in the PHP4 language.
+This package provides a web frontend to display the XML tree published
+by ganglia, and to provide historical graphs of collected
+metrics. This website is written in the PHP.
 
 %package gmetad
 Summary:            Ganglia Metadata collection daemon
@@ -70,14 +69,13 @@ Requires(post):     /sbin/chkconfig
 Requires(preun):    /sbin/chkconfig
 Requires(preun):    /sbin/service
 %endif #systemd
-
 %description        gmetad
 Ganglia is a scalable, real-time monitoring and execution environment
 with all execution requests and statistics expressed in an open
 well-defined XML format.
 
-This gmetad daemon aggregates monitoring data from several clusters
-to form a monitoring grid. It also keeps metric history using rrdtool.
+This gmetad daemon aggregates monitoring data from several clusters to
+form a monitoring grid. It also keeps metric history using rrdtool.
 
 %package            gmond
 Summary:            Ganglia Monitoring daemon
@@ -92,28 +90,26 @@ Requires(post):     /sbin/chkconfig
 Requires(preun):    /sbin/chkconfig
 Requires(preun):    /sbin/service
 %endif #systemd
-
 %description        gmond
 Ganglia is a scalable, real-time monitoring and execution environment
 with all execution requests and statistics expressed in an open
 well-defined XML format.
 
-This gmond daemon provides the ganglia service within a single cluster or
-Multicast domain.
+This gmond daemon provides the ganglia service within a single cluster
+or Multicast domain.
 
 %package            gmond-python
 Summary:            Ganglia Monitor daemon python DSO and metric modules
 Group:              Applications/Internet
 Requires:           ganglia-gmond
 Requires:           python
-
 %description        gmond-python
 Ganglia is a scalable, real-time monitoring and execution environment
 with all execution requests and statistics expressed in an open
 well-defined XML format.
 
-This package provides the gmond python DSO and python gmond modules, which
-can be loaded via the DSO at gmond daemon start time.
+This package provides the gmond python DSO and python gmond modules,
+which can be loaded via the DSO at gmond daemon start time.
 
 %package            devel
 Summary:            Ganglia Library
@@ -130,15 +126,14 @@ programmers can use to build scalable cluster or grid applications
 # fix broken systemd support
 install -m 0644 %{SOURCE2} gmond/gmond.service.in
 install -m 0644 %{SOURCE3} gmetad/gmetad.service.in
-
 %patch1 -p0
 %patch2 -p0
-
 # web part
 %setup -q -T -D -a 1
 mv ganglia-web-%{webver} web
-cd web
+pushd web
 %patch0 -p1
+popd
 
 %build
 %configure \
@@ -167,39 +162,40 @@ cd web
 make %{?_smp_mflags}
 
 %install
-make install DESTDIR=$RPM_BUILD_ROOT
+make install DESTDIR=%{buildroot}
 
 ## Create directory structures
-mkdir -p $RPM_BUILD_ROOT%{_libdir}/ganglia/python_modules
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/%{name}/{rrds,conf}
-mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/%{name}/dwoo/{cache,compiled}
+mkdir -p %{buildroot}%{_libdir}/ganglia/python_modules
+mkdir -p %{buildroot}%{_localstatedir}/lib/%{name}/rrds
 
 ## Install services
 %if 0%{?systemd}
 install -Dp -m 0644 %{SOURCE2} %{buildroot}%{_unitdir}/gmond.service
 install -Dp -m 0644 %{SOURCE3} %{buildroot}%{_unitdir}/gmetad.service
 %else
-install -Dp -m 0755 gmond/gmond.init $RPM_BUILD_ROOT%{_sysconfdir}/init.d/gmond
-install -Dp -m 0755 gmetad/gmetad.init $RPM_BUILD_ROOT%{_sysconfdir}/init.d/gmetad
+install -Dp -m 0755 gmond/gmond.init %{buildroot}%{_sysconfdir}/init.d/gmond
+install -Dp -m 0755 gmetad/gmetad.init %{buildroot}%{_sysconfdir}/init.d/gmetad
 %endif # systemd
 
 ## Build default gmond.conf from gmond using the '-t' flag
 LD_LIBRARY_PATH=lib/.libs gmond/gmond -t | %{__perl} -pe 's|nobody|ganglia|g' \
-    > $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/gmond.conf
+    > %{buildroot}%{_sysconfdir}/ganglia/gmond.conf
 
 ## Python bits
 # Copy the python metric modules and .conf files
-cp -p gmond/python_modules/conf.d/*.pyconf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/
-cp -p gmond/modules/conf.d/*.conf $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/
-cp -p gmond/python_modules/*/*.py $RPM_BUILD_ROOT%{_libdir}/ganglia/python_modules/
+cp -p gmond/python_modules/conf.d/*.pyconf %{buildroot}%{_sysconfdir}/ganglia/conf.d/
+cp -p gmond/modules/conf.d/*.conf %{buildroot}%{_sysconfdir}/ganglia/conf.d/
+cp -p gmond/python_modules/*/*.py %{buildroot}%{_libdir}/ganglia/python_modules/
 
 ## Web bits
-mkdir -p $RPM_BUILD_ROOT/%{_datadir}/%{name}
-cp -rp web/* $RPM_BUILD_ROOT%{_datadir}/%{name}/
+pushd web
+make install DESTDIR=%{buildroot}
 install -p -m 0644 %{SOURCE6} %{buildroot}%{_sysconfdir}/ganglia/conf.php
 ln -s ../../..%{_sysconfdir}/%{name}/conf.php \
-    $RPM_BUILD_ROOT%{_datadir}/%{name}/conf.php
+    %{buildroot}%{_datadir}/%{name}/conf.php
+popd
 
+## httpd config
 %if 0%{?fedora} >= 18
 install -Dp -m 0644 %{SOURCE4} %{buildroot}%{_sysconfdir}/httpd/conf.d/%{name}.conf
 %else
@@ -209,34 +205,35 @@ install -Dp -m 0644 %{SOURCE5} %{buildroot}%{_sysconfdir}/httpd/conf.d/%{name}.c
 ## Various clean up after install:
 
 ## Don't install the status modules and example.conf
-rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/{modgstatus,example}.conf
+rm -f %{buildroot}%{_sysconfdir}/ganglia/conf.d/{modgstatus,example}.conf
 
 ## Disable the diskusage module until it is configured properly
-## mv $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf \
-##   $RPM_BUILD_ROOT%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf.off
+## mv %{buildroot}%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf \
+##   %{buildroot}%{_sysconfdir}/ganglia/conf.d/diskusage.pyconf.off
 
 ## Remove unwanted files from web dir
-rm -rf $RPM_BUILD_ROOT%{_datadir}/%{name}/{Makefile*,debian,ganglia-web.spec*,ganglia-web}
-rm -rf $RPM_BUILD_ROOT%{_datadir}/%{name}/{conf_default.php.in,version.php.in}
+rm -rf %{buildroot}%{_datadir}/%{name}/{Makefile*,debian,ganglia-web.spec*,ganglia-web}
+rm -rf %{buildroot}%{_datadir}/%{name}/{conf_default.php.in,version.php.in}
+rm -rf %{buildroot}%{_localstatedir}/lib/%{name}-web/conf/sql
 
 ## Included as doc
-rm -rf $RPM_BUILD_ROOT%{_datadir}/%{name}/{README,TODO,AUTHORS,COPYING}
+rm -rf %{buildroot}%{_datadir}/%{name}/{README,TODO,AUTHORS,COPYING}
 
 ## House cleaning
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
+rm -f %{buildroot}%{_libdir}/*.la
 
 ## Use system php-ZendFramework
-rm -rf $RPM_BUILD_ROOT/usr/share/ganglia/lib/Zend
-ln -s /usr/share/php/Zend $RPM_BUILD_ROOT/usr/share/ganglia/lib/Zend
+rm -rf %{buildroot}/usr/share/ganglia/lib/Zend
+ln -s /usr/share/php/Zend %{buildroot}/usr/share/ganglia/lib/Zend
 
 # Remove execute bit
-chmod 0644 $RPM_BUILD_ROOT%{_datadir}/%{name}/header.php
-chmod 0644 $RPM_BUILD_ROOT%{_libdir}/%{name}/python_modules/*.py
-chmod 0644 $RPM_BUILD_ROOT%{_datadir}/%{name}/css/smoothness/jquery-ui-1.10.2.custom.css
-chmod 0644 $RPM_BUILD_ROOT%{_datadir}/%{name}/css/smoothness/jquery-ui-1.10.2.custom.min.css
+chmod 0644 %{buildroot}%{_datadir}/%{name}/header.php
+chmod 0644 %{buildroot}%{_libdir}/%{name}/python_modules/*.py
+chmod 0644 %{buildroot}%{_datadir}/%{name}/css/smoothness/jquery-ui-1.10.2.custom.css
+chmod 0644 %{buildroot}%{_datadir}/%{name}/css/smoothness/jquery-ui-1.10.2.custom.min.css
 
 # Remove shebang
-sed -i '1{\@^#!@d}' $RPM_BUILD_ROOT%{_libdir}/%{name}/python_modules/*.py
+sed -i '1{\@^#!@d}' %{buildroot}%{_libdir}/%{name}/python_modules/*.py
 
 %pre
 ## Add the "ganglia" user
@@ -355,12 +352,16 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/conf.php
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %{_datadir}/%{name}
-%dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/conf
-%dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo
-%dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/cache
-%dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}/dwoo/compiled
+%dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/conf
+%config(noreplace) %attr(0644,apache,apache) %{_localstatedir}/lib/%{name}-web/conf/*.json
+%dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo
+%dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/cache
+%dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Tue Jan 23 2017 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-13
+- Reorg file locations to fix rhbz#1238325
+
 * Mon Dec 05 2016 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-12
 - Add patch to fix sflow issue (rhbz#1400932), thanks to Glenn L. Jenkins!
 
