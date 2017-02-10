@@ -6,7 +6,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            13%{?dist}
+Release:            14%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -359,6 +359,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Fri Feb 10 2017 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-14
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_26_Mass_Rebuild
+
 * Tue Jan 23 2017 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-13
 - Reorg file locations to fix rhbz#1238325
 
