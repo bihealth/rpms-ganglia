@@ -6,7 +6,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            14%{?dist}
+Release:            15%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -359,6 +359,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Thu May 25 2017 Gwyn Ciesla <limburgher@gmail.com> - 3.7.2-15
+- libconfuse rebuild.
+
 * Fri Feb 10 2017 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-14
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_26_Mass_Rebuild
 
