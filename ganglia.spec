@@ -6,7 +6,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            16%{?dist}
+Release:            17%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -359,6 +359,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Wed Aug 02 2017 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-17
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Binutils_Mass_Rebuild
+
 * Wed Jul 26 2017 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-16
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Mass_Rebuild
 
