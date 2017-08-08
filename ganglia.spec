@@ -6,7 +6,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            17%{?dist}
+Release:            18%{?dist}
 Summary:            Distributed Monitoring System
 Group:              Applications/Internet
 License:            BSD
@@ -98,12 +98,15 @@ well-defined XML format.
 This gmond daemon provides the ganglia service within a single cluster
 or Multicast domain.
 
-%package            gmond-python
+%package            -n python2-ganglia-gmond
 Summary:            Ganglia Monitor daemon python DSO and metric modules
 Group:              Applications/Internet
 Requires:           ganglia-gmond
 Requires:           python
-%description        gmond-python
+%{?python_provide:%python_provide python2-ganglia-gmond}
+# Remove before F30
+Provides:           ganglia-gmond-python = %{version}-%{release}
+%description        -n python2-ganglia-gmond
 Ganglia is a scalable, real-time monitoring and execution environment
 with all execution requests and statistics expressed in an open
 well-defined XML format.
@@ -334,7 +337,7 @@ fi
 %config(noreplace) %{_sysconfdir}/ganglia/conf.d/*.conf
 %exclude %{_sysconfdir}/ganglia/conf.d/modpython.conf
 
-%files gmond-python
+%files -n python2-ganglia-gmond
 %dir %{_libdir}/ganglia/python_modules/
 %{_libdir}/ganglia/python_modules/*.py*
 %{_libdir}/ganglia/modpython.so*
@@ -359,6 +362,10 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Tue Aug 08 2017 Zbigniew Jędrzejewski-Szmek <zbyszek@in.waw.pl> - 3.7.2-18
+- Python 2 binary package renamed to python2-ganglia-gmond
+  See https://fedoraproject.org/wiki/FinalizingFedoraSwitchtoPython3
+
 * Wed Aug 02 2017 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-17
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Binutils_Mass_Rebuild
 
