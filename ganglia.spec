@@ -6,9 +6,8 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            19%{?dist}
+Release:            20%{?dist}
 Summary:            Distributed Monitoring System
-Group:              Applications/Internet
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
 Source0:            http://downloads.sourceforge.net/sourceforge/ganglia/ganglia-%{version}.tar.gz
@@ -21,8 +20,16 @@ Source6:            conf.php
 Patch0:             ganglia-web-3.7.2-path.patch
 Patch1:             ganglia-3.7.2-apache.patch
 Patch2:             ganglia-3.7.2-sflow.patch
+Patch3:             ganglia-3.7.2-tirpc-hack.patch
 %if 0%{?systemd}
 BuildRequires:      systemd
+%endif
+%if 0%{?fedora} > 27 || 0%{?rhel} > 7
+BuildRequires:      rpcgen
+BuildRequires:      libtirpc-devel
+BuildRequires:      autoconf
+BuildRequires:      automake
+BuildRequires:      libtool
 %endif
 BuildRequires:      rrdtool-devel
 BuildRequires:      apr-devel >= 1
@@ -31,7 +38,7 @@ BuildRequires:      libart_lgpl-devel
 BuildRequires:      libconfuse-devel
 BuildRequires:      libmemcached-devel
 BuildRequires:      expat-devel
-BuildRequires:      python-devel
+BuildRequires:      python2-devel
 BuildRequires:      freetype-devel
 BuildRequires:      pcre-devel
 BuildRequires:      rsync
@@ -44,7 +51,6 @@ well-defined XML format.
 
 %package web
 Summary:            Ganglia Web Frontend
-Group:              Applications/Internet
 Version:            %{webver}
 Requires:           rrdtool
 Requires:           php
@@ -58,7 +64,6 @@ metrics. This website is written in the PHP.
 
 %package gmetad
 Summary:            Ganglia Metadata collection daemon
-Group:              Applications/Internet
 Requires:           %{name} = %{gangver}-%{release}
 %if 0%{?systemd}
 Requires(post):     systemd
@@ -79,7 +84,6 @@ form a monitoring grid. It also keeps metric history using rrdtool.
 
 %package            gmond
 Summary:            Ganglia Monitoring daemon
-Group:              Applications/Internet
 Requires:           %{name} = %{gangver}-%{release}
 %if 0%{?systemd}
 Requires(post):     systemd
@@ -98,15 +102,14 @@ well-defined XML format.
 This gmond daemon provides the ganglia service within a single cluster
 or Multicast domain.
 
-%package            -n python2-ganglia-gmond
+%package         -n python2-ganglia-gmond
 Summary:            Ganglia Monitor daemon python DSO and metric modules
-Group:              Applications/Internet
 Requires:           ganglia-gmond
 Requires:           python
 %{?python_provide:%python_provide python2-ganglia-gmond}
 # Remove before F30
 Provides:           ganglia-gmond-python = %{version}-%{release}
-%description        -n python2-ganglia-gmond
+%description     -n python2-ganglia-gmond
 Ganglia is a scalable, real-time monitoring and execution environment
 with all execution requests and statistics expressed in an open
 well-defined XML format.
@@ -116,7 +119,6 @@ which can be loaded via the DSO at gmond daemon start time.
 
 %package            devel
 Summary:            Ganglia Library
-Group:              Applications/Internet
 Requires:           %{name} = %{gangver}-%{release}
 Requires:           apr-devel
 Requires:           libconfuse-devel
@@ -131,6 +133,9 @@ install -m 0644 %{SOURCE2} gmond/gmond.service.in
 install -m 0644 %{SOURCE3} gmetad/gmetad.service.in
 %patch1 -p0
 %patch2 -p0
+%if 0%{?fedora} > 27 || 0%{?rhel} > 7
+%patch3 -p1
+%endif
 # web part
 %setup -q -T -D -a 1
 mv ganglia-web-%{webver} web
@@ -139,6 +144,15 @@ pushd web
 popd
 
 %build
+touch Makefile.am
+%if 0%{?fedora} > 27 || 0%{?rhel} > 7
+aclocal -I m4
+autoheader
+automake --add-missing --copy --foreign 2>/dev/null
+libtoolize --automake --copy
+automake --add-missing --copy --foreign
+autoconf -f || exit 1
+%endif
 %configure \
     --enable-setuid=ganglia \
     --enable-setgid=ganglia \
@@ -242,10 +256,6 @@ sed -i '1{\@^#!@d}' %{buildroot}%{_libdir}/%{name}/python_modules/*.py
 ## Add the "ganglia" user
 /usr/sbin/useradd -c "Ganglia Monitoring System" \
         -s /sbin/nologin -r -d %{_localstatedir}/lib/%{name} ganglia 2> /dev/null || :
-/sbin/ldconfig
-
-%post -p /sbin/ldconfig
-%postun -p /sbin/ldconfig
 
 %if 0%{?systemd}
 %post gmond
@@ -287,9 +297,6 @@ if [ "$1" = 0 ]; then
 fi
 
 %endif # systemd
-
-%post devel -p /sbin/ldconfig
-%postun devel -p /sbin/ldconfig
 
 %post web
 if [ ! -L /usr/share/ganglia/lib/Zend ]; then
@@ -362,6 +369,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Wed Feb 14 2018 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-20
+- Add hack to build with tirpc
+
 * Wed Feb 07 2018 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-19
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_28_Mass_Rebuild
 
@@ -381,7 +391,7 @@ fi
 * Fri Feb 10 2017 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-14
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_26_Mass_Rebuild
 
-* Tue Jan 23 2017 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-13
+* Mon Jan 23 2017 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-13
 - Reorg file locations to fix rhbz#1238325
 
 * Mon Dec 05 2016 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-12

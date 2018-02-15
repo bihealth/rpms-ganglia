@@ -1,0 +1,232 @@
+diff --git a/Makefile.am b/Makefile.am
+index 95d0807..a918f57 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -9,7 +9,7 @@ GMETAD_SUBDIR =
+ endif
+ 
+ EXTRA_SUBDIRS = "gmetad-python contrib solaris"
+-INCLUDES = @APR_INCLUDES@
++INCLUDES = @APR_INCLUDES@  @LIBTIRPC_INCLUDES@
+ 
+ AUTOMAKE_OPTIONS = dist-bzip2 dist-tarZ dist-zip
+ ACLOCAL_AMFLAGS = -I m4
+diff --git a/configure.ac b/configure.ac
+index fe7983b..d98460a 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -180,6 +180,10 @@ AC_ARG_WITH( libapr,
+ [  --with-libapr=PATH      Specify location for libapr-1 or full path to apr-1-config],
+ [if test x"$withval" != xno; then libapr="yes"; libaprpath="$withval"; fi])
+ 
++AC_ARG_WITH( libtirpc,
++[  --with-libtirpc=PATH    Specify location for libtirpc],
++[if test x"$withval" != xno; then libtirpc="yes"; libtirpcpath="$withval"; fi])
++
+ AC_ARG_WITH( libexpat,
+ [  --with-libexpat=DIR     Specify location for libexpat],
+ [if test x"$withval" != xno; then libexpat="yes"; libexpatpath="$withval"; fi])
+@@ -426,6 +430,35 @@ else
+ fi
+ 
+ echo
++echo Checking for tirpc
++if test x"$libtiprcpath" != x && test x"$libtirpcpath" != xyes; then
++  if test -f "$libtirpcpath" ; then
++    LIBTIRPC_INCLUDES=`$libtirpcpath --includes`
++    AC_SUBST(LIBTIRPC_INCLUDES)
++    LIBTIRPC_LIBPATH=`$libtirpcpath --link-ld`
++    LDFLAGS="$LDFLAGS -L`expr "x$LIBTIRPC_LIBPATH" : '.*-L\(.*\) '`"
++    AC_CHECK_LIB(tirpc, xdr_string,,,[`$libtirpcpath --libs`])
++  else
++    CFLAGS="$CFLAGS -I$libtirpcpath/include/tirpc"
++    LDFLAGS="$LDFLAGS -L$libtirpcpath/${LIB_SUFFIX}"
++    echo "Added -I$libtirpcpath/include to CFLAGS"
++    echo "Added -L$libtirpcpath/${LIB_SUFFIX} to LDFLAGS"
++    AC_CHECK_LIB(tirpc, xdr_string)
++  fi
++
++  if test x"$ac_cv_lib_tirpc_xdr_string" = xyes; then
++    echo "Found a suitable tirpc library"
++  else
++    echo "libtirpc not found"
++    exit 1;
++  fi
++else
++  PKG_CHECK_MODULES([LIBTIRPC],[libtirpc])
++  LDFLAGS="$LDFLAGS $LIBS $LIBTIRPC_LIBS"
++  LIBTIRPC_INCLUDES="$LIBTIRPC_CFLAGS"
++fi
++
++echo
+ echo Checking for libmemcached
+ AC_ARG_WITH( memcached,
+ [  --with-memcached        enable memcached metrics publishing],
+@@ -567,7 +600,6 @@ echo "Found a suitable zlib"
+ echo
+ 
+ 
+-AC_CHECK_LIB(rpc, xdr_string)
+ AC_CHECK_LIB(socket, socket)
+ AC_CHECK_LIB(nsl, inet_addr)
+ AC_CHECK_LIB(nsl, gethostbyaddr_r)
+@@ -606,14 +638,6 @@ AC_CHECK_HEADER([sys/mount.h], [], [],
+ #endif
+ ])
+ 
+-AC_CHECK_HEADERS(rpc/types.h)
+-AC_CHECK_HEADER([rpc/xdr.h], [],
+-   [AC_MSG_ERROR([your system is missing the Sun RPC (ONC/RPC) libraries])],
+-[#ifdef HAVE_RPC_TYPES_H
+-# include <rpc/types.h>
+-#endif
+-])
+-
+ dnl ##################################################################
+ dnl Checks for typedefs.
+ dnl
+diff --git a/gmetad/Makefile.am b/gmetad/Makefile.am
+index 0a4e360..9eac377 100644
+--- a/gmetad/Makefile.am
++++ b/gmetad/Makefile.am
+@@ -11,7 +11,7 @@ GLDADD =
+ GLDFLAGS = 
+ endif
+ 
+-INCLUDES = @APR_INCLUDES@
++INCLUDES = @APR_INCLUDES@ @LIBTIRPC_INCLUDES@
+ AM_CFLAGS = -I$(top_builddir)/lib -I$(top_builddir)/gmond -I$(top_builddir)/libmetrics -I$(top_builddir)/include $(GCFLAGS) @PROTOBUF_C_CFLAGS@
+ 
+ sbin_PROGRAMS = gmetad
+diff --git a/gmetric/Makefile.am b/gmetric/Makefile.am
+index bc7807c..4aa9542 100644
+--- a/gmetric/Makefile.am
++++ b/gmetric/Makefile.am
+@@ -10,7 +10,7 @@ GLDADD =
+ GLDFLAGS = 
+ endif
+ 
+-INCLUDES = @APR_INCLUDES@
++INCLUDES = @APR_INCLUDES@ @LIBTIRPC_INCLUDES@
+ 
+ AM_CFLAGS = -I../lib -I../include $(GCFLAGS)
+ 
+diff --git a/gmond/Makefile.am b/gmond/Makefile.am
+index 256fee3..c9ab899 100644
+--- a/gmond/Makefile.am
++++ b/gmond/Makefile.am
+@@ -44,7 +44,7 @@ if BUILD_SFLOW
+ GCFLAGS += -DSFLOW
+ endif
+ 
+-INCLUDES = @APR_INCLUDES@
++INCLUDES = @APR_INCLUDES@ @LIBTIRPC_INCLUDES@
+ AM_CFLAGS = -I$(top_builddir)/lib -I$(top_builddir)/include/ -I$(top_builddir)/libmetrics $(GCFLAGS)
+ 
+ sbin_PROGRAMS = gmond
+diff --git a/gmond/modules/cpu/Makefile.am b/gmond/modules/cpu/Makefile.am
+index fd7457e..2c2b7ab 100644
+--- a/gmond/modules/cpu/Makefile.am
++++ b/gmond/modules/cpu/Makefile.am
+@@ -25,4 +25,4 @@ modload_la_LIBADD = $(top_builddir)/libmetrics/libmetrics.la
+ 
+ endif
+ 
+-INCLUDES = @APR_INCLUDES@
++INCLUDES = @APR_INCLUDES@ @LIBTIRPC_INCLUDES@
+diff --git a/gmond/modules/disk/Makefile.am b/gmond/modules/disk/Makefile.am
+index 0c78689..ce62aa5 100644
+--- a/gmond/modules/disk/Makefile.am
++++ b/gmond/modules/disk/Makefile.am
+@@ -11,4 +11,4 @@ moddisk_la_LDFLAGS = -module -avoid-version
+ moddisk_la_LIBADD = $(top_builddir)/libmetrics/libmetrics.la
+ endif
+ 
+-INCLUDES = @APR_INCLUDES@
++INCLUDES = @APR_INCLUDES@ @LIBTIRPC_INCLUDES@
+diff --git a/gmond/modules/example/Makefile.am b/gmond/modules/example/Makefile.am
+index e3bff6a..765b85d 100644
+--- a/gmond/modules/example/Makefile.am
++++ b/gmond/modules/example/Makefile.am
+@@ -11,7 +11,7 @@ modexample_la_LDFLAGS = -module -avoid-version
+ EXTRA_DIST = ../conf.d/example.conf
+ endif
+ 
+-INCLUDES = @APR_INCLUDES@
++INCLUDES = @APR_INCLUDES@ @LIBTIRPC_INCLUDES@
+ 
+ install:
+ 	@echo
+diff --git a/gmond/modules/memory/Makefile.am b/gmond/modules/memory/Makefile.am
+index 82336db..f606830 100644
+--- a/gmond/modules/memory/Makefile.am
++++ b/gmond/modules/memory/Makefile.am
+@@ -12,4 +12,4 @@ modmem_la_LDFLAGS = -module -avoid-version
+ modmem_la_LIBADD = $(top_builddir)/libmetrics/libmetrics.la
+ endif
+ 
+-INCLUDES = @APR_INCLUDES@
++INCLUDES = @APR_INCLUDES@ @LIBTIRPC_INCLUDES@
+diff --git a/gmond/modules/network/Makefile.am b/gmond/modules/network/Makefile.am
+index 72a4faf..4f12e91 100644
+--- a/gmond/modules/network/Makefile.am
++++ b/gmond/modules/network/Makefile.am
+@@ -12,4 +12,4 @@ modnet_la_LDFLAGS = -module -avoid-version
+ modnet_la_LIBADD = $(top_builddir)/libmetrics/libmetrics.la
+ endif
+ 
+-INCLUDES = @APR_INCLUDES@
++INCLUDES = @APR_INCLUDES@ @LIBTIRPC_INCLUDES@
+diff --git a/gmond/modules/perl/Makefile.am b/gmond/modules/perl/Makefile.am
+index b7b095c..c6d0cce 100644
+--- a/gmond/modules/perl/Makefile.am
++++ b/gmond/modules/perl/Makefile.am
+@@ -28,4 +28,4 @@ install-exec-hook:	../conf.d/modperl.conf README
+ 	mkdir -p $(DESTDIR)$(sysconfdir)/conf.d && \
+ 	  $(INSTALL_DATA) ../conf.d/modperl.conf $(DESTDIR)$(sysconfdir)/conf.d/modperl.conf
+ 
+-INCLUDES = @APR_INCLUDES@ @PERL_INCLUDES@
++INCLUDES = @APR_INCLUDES@ @LIBTIRPC_INCLUDES@ @PERL_INCLUDES@
+diff --git a/gmond/modules/python/Makefile.am b/gmond/modules/python/Makefile.am
+index f535b07..4b130a1 100644
+--- a/gmond/modules/python/Makefile.am
++++ b/gmond/modules/python/Makefile.am
+@@ -27,4 +27,4 @@ install-exec-hook:	../conf.d/modpython.conf README
+ 	mkdir -p $(DESTDIR)$(sysconfdir)/conf.d && \
+ 	  $(INSTALL_DATA) ../conf.d/modpython.conf $(DESTDIR)$(sysconfdir)/conf.d/modpython.conf
+ 
+-INCLUDES = @APR_INCLUDES@ @PYTHON_INCLUDES@
++INCLUDES = @APR_INCLUDES@ @LIBTIRPC_INCLUDES@ @PYTHON_INCLUDES@
+diff --git a/gmond/modules/status/Makefile.am b/gmond/modules/status/Makefile.am
+index cd84069..6ce9188 100644
+--- a/gmond/modules/status/Makefile.am
++++ b/gmond/modules/status/Makefile.am
+@@ -11,4 +11,4 @@ modgstatus_la_LDFLAGS = -module -avoid-version
+ EXTRA_DIST = ../conf.d/modgstatus.conf
+ endif
+ 
+-INCLUDES = @APR_INCLUDES@
++INCLUDES = @APR_INCLUDES@ @LIBTIRPC_INCLUDES@
+diff --git a/gmond/modules/system/Makefile.am b/gmond/modules/system/Makefile.am
+index 5fc7fb3..f83a380 100644
+--- a/gmond/modules/system/Makefile.am
++++ b/gmond/modules/system/Makefile.am
+@@ -16,4 +16,4 @@ modsys_la_LDFLAGS = -module -avoid-version
+ modsys_la_LIBADD = $(top_builddir)/libmetrics/libmetrics.la
+ endif
+ 
+-INCLUDES = @APR_INCLUDES@
++INCLUDES = @APR_INCLUDES@ @LIBTIRPC_INCLUDES@
+diff --git a/lib/Makefile.am b/lib/Makefile.am
+index 935c514..e2ec77b 100644
+--- a/lib/Makefile.am
++++ b/lib/Makefile.am
+@@ -14,7 +14,7 @@ if BUILD_SFLOW
+ GCFLAGS += -DSFLOW
+ endif
+ 
+-INCLUDES = @APR_INCLUDES@
++INCLUDES = @APR_INCLUDES@ @LIBTIRPC_INCLUDES@
+ AM_CFLAGS = -I.. -I. -I$(top_builddir)/include/ $(GCFLAGS) -DSYSCONFDIR='"$(sysconfdir)"'
+ 
+ include_HEADERS = gm_protocol.h
