@@ -6,7 +6,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            20%{?dist}
+Release:            21%{?dist}
 Summary:            Distributed Monitoring System
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
@@ -105,7 +105,7 @@ or Multicast domain.
 %package         -n python2-ganglia-gmond
 Summary:            Ganglia Monitor daemon python DSO and metric modules
 Requires:           ganglia-gmond
-Requires:           python
+Requires:           python2
 %{?python_provide:%python_provide python2-ganglia-gmond}
 # Remove before F30
 Provides:           ganglia-gmond-python = %{version}-%{release}
@@ -369,6 +369,10 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Tue Feb 20 2018 Iryna Shcherbina <ishcherb@redhat.com> - 3.7.2-21
+- Update Python 2 dependency declarations to new packaging standards
+  (See https://fedoraproject.org/wiki/FinalizingFedoraSwitchtoPython3)
+
 * Wed Feb 14 2018 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-20
 - Add hack to build with tirpc
 
