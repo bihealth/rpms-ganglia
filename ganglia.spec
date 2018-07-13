@@ -6,7 +6,7 @@
 
 Name:               ganglia
 Version:            %{gangver}
-Release:            21%{?dist}
+Release:            22%{?dist}
 Summary:            Distributed Monitoring System
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
@@ -369,6 +369,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Fri Jul 13 2018 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-22
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_29_Mass_Rebuild
+
 * Tue Feb 20 2018 Iryna Shcherbina <ishcherb@redhat.com> - 3.7.2-21
 - Update Python 2 dependency declarations to new packaging standards
   (See https://fedoraproject.org/wiki/FinalizingFedoraSwitchtoPython3)
