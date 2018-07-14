@@ -4,10 +4,10 @@
 %global systemd         1
 %global _hardened_build 1
 
+Summary:            Distributed Monitoring System
 Name:               ganglia
 Version:            %{gangver}
-Release:            22%{?dist}
-Summary:            Distributed Monitoring System
+Release:            23%{?dist}
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
 Source0:            http://downloads.sourceforge.net/sourceforge/ganglia/ganglia-%{version}.tar.gz
@@ -31,16 +31,17 @@ BuildRequires:      autoconf
 BuildRequires:      automake
 BuildRequires:      libtool
 %endif
-BuildRequires:      rrdtool-devel
 BuildRequires:      apr-devel >= 1
-BuildRequires:      libpng-devel
+BuildRequires:      expat-devel
+BuildRequires:      freetype-devel
+BuildRequires:      gcc
 BuildRequires:      libart_lgpl-devel
 BuildRequires:      libconfuse-devel
 BuildRequires:      libmemcached-devel
-BuildRequires:      expat-devel
-BuildRequires:      python2-devel
-BuildRequires:      freetype-devel
+BuildRequires:      libpng-devel
 BuildRequires:      pcre-devel
+BuildRequires:      python2-devel
+BuildRequires:      rrdtool-devel
 BuildRequires:      rsync
 BuildRequires:      /usr/bin/pod2man
 BuildRequires:      /usr/bin/pod2html
@@ -49,7 +50,7 @@ Ganglia is a scalable, real-time monitoring and execution environment
 with all execution requests and statistics expressed in an open
 well-defined XML format.
 
-%package web
+%package            web
 Summary:            Ganglia Web Frontend
 Version:            %{webver}
 Requires:           rrdtool
@@ -62,7 +63,7 @@ This package provides a web frontend to display the XML tree published
 by ganglia, and to provide historical graphs of collected
 metrics. This website is written in the PHP.
 
-%package gmetad
+%package            gmetad
 Summary:            Ganglia Metadata collection daemon
 Requires:           %{name} = %{gangver}-%{release}
 %if 0%{?systemd}
@@ -160,6 +161,7 @@ autoconf -f || exit 1
     --with-memcached \
     --disable-static \
     --enable-shared \
+    --with-python=%{__python2} \
     --sysconfdir=%{_sysconfdir}/ganglia
 
 # Remove rpaths
@@ -369,6 +371,10 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Sat Jul 14 2018 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-23
+- Add path to python
+- Add C compiler
+
 * Fri Jul 13 2018 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-22
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_29_Mass_Rebuild
 
