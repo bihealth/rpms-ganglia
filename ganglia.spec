@@ -7,7 +7,7 @@
 Summary:            Distributed Monitoring System
 Name:               ganglia
 Version:            %{gangver}
-Release:            24%{?dist}
+Release:            25%{?dist}
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
 Source0:            http://downloads.sourceforge.net/sourceforge/ganglia/ganglia-%{version}.tar.gz
@@ -371,6 +371,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Thu Jul 25 2019 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-25
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_31_Mass_Rebuild
+
 * Thu Jan 31 2019 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-24
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_30_Mass_Rebuild
 
