@@ -11,7 +11,7 @@
 Summary:            Distributed Monitoring System
 Name:               ganglia
 Version:            %{gangver}
-Release:            26%{?dist}
+Release:            27%{?dist}
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
 Source0:            http://downloads.sourceforge.net/sourceforge/ganglia/ganglia-%{version}.tar.gz
