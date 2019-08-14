@@ -4,6 +4,10 @@
 %global systemd         1
 %global _hardened_build 1
 
+%if 0%{?fedora} < 31 || 0%{?rhel} < 8
+%global py2             1
+%endif
+
 Summary:            Distributed Monitoring System
 Name:               ganglia
 Version:            %{gangver}
@@ -40,7 +44,7 @@ BuildRequires:      libconfuse-devel
 BuildRequires:      libmemcached-devel
 BuildRequires:      libpng-devel
 BuildRequires:      pcre-devel
-BuildRequires:      python2-devel
+%{?py2:BuildRequires:      python2-devel}
 BuildRequires:      rrdtool-devel
 BuildRequires:      rsync
 BuildRequires:      /usr/bin/pod2man
@@ -107,6 +111,7 @@ well-defined XML format.
 This gmond daemon provides the ganglia service within a single cluster
 or Multicast domain.
 
+%if 0%{?py2}
 %package         -n python2-ganglia-gmond
 Summary:            Ganglia Monitor daemon python DSO and metric modules
 Requires:           ganglia-gmond
@@ -121,6 +126,7 @@ well-defined XML format.
 
 This package provides the gmond python DSO and python gmond modules,
 which can be loaded via the DSO at gmond daemon start time.
+%endif
 
 %package            devel
 Summary:            Ganglia Library
@@ -165,7 +171,11 @@ autoconf -f || exit 1
     --with-memcached \
     --disable-static \
     --enable-shared \
+%if 0%{?py2}
     --with-python=%{__python2} \
+%else
+    --disable-python \
+%endif
     --sysconfdir=%{_sysconfdir}/ganglia
 
 # Remove rpaths
@@ -188,7 +198,7 @@ make %{?_smp_mflags}
 make install DESTDIR=%{buildroot}
 
 ## Create directory structures
-mkdir -p %{buildroot}%{_libdir}/ganglia/python_modules
+%{?py2:mkdir -p %{buildroot}%{_libdir}/ganglia/python_modules}
 mkdir -p %{buildroot}%{_localstatedir}/lib/%{name}/rrds
 
 ## Install services
@@ -204,11 +214,13 @@ install -Dp -m 0755 gmetad/gmetad.init %{buildroot}%{_sysconfdir}/init.d/gmetad
 LD_LIBRARY_PATH=lib/.libs gmond/gmond -t | %{__perl} -pe 's|nobody|ganglia|g' \
     > %{buildroot}%{_sysconfdir}/ganglia/gmond.conf
 
+%if 0%{?py2}
 ## Python bits
 # Copy the python metric modules and .conf files
 cp -p gmond/python_modules/conf.d/*.pyconf %{buildroot}%{_sysconfdir}/ganglia/conf.d/
 cp -p gmond/modules/conf.d/*.conf %{buildroot}%{_sysconfdir}/ganglia/conf.d/
 cp -p gmond/python_modules/*/*.py %{buildroot}%{_libdir}/ganglia/python_modules/
+%endif
 
 ## Web bits
 pushd web
@@ -251,12 +263,12 @@ ln -s /usr/share/php/Zend %{buildroot}/usr/share/ganglia/lib/Zend
 
 # Remove execute bit
 chmod 0644 %{buildroot}%{_datadir}/%{name}/header.php
-chmod 0644 %{buildroot}%{_libdir}/%{name}/python_modules/*.py
+%{?py2:chmod 0644 %{buildroot}%{_libdir}/%{name}/python_modules/*.py}
 chmod 0644 %{buildroot}%{_datadir}/%{name}/css/smoothness/jquery-ui-1.10.2.custom.css
 chmod 0644 %{buildroot}%{_datadir}/%{name}/css/smoothness/jquery-ui-1.10.2.custom.min.css
 
 # Remove shebang
-sed -i '1{\@^#!@d}' %{buildroot}%{_libdir}/%{name}/python_modules/*.py
+%{?py2:sed -i '1{\@^#!@d}' %{buildroot}%{_libdir}/%{name}/python_modules/*.py}
 
 %pre
 ## Add the "ganglia" user
@@ -315,7 +327,7 @@ fi
 %{_libdir}/libganglia*.so.*
 %dir %{_libdir}/ganglia
 %{_libdir}/ganglia/*.so
-%exclude %{_libdir}/ganglia/modpython.so
+%{?py2:%exclude %{_libdir}/ganglia/modpython.so}
 
 %files gmetad
 %dir %{_localstatedir}/lib/%{name}
@@ -345,17 +357,19 @@ fi
 %{_mandir}/man1/gstat.1*
 %{_mandir}/man1/gmetric.1*
 %dir %{_sysconfdir}/ganglia
-%dir %{_sysconfdir}/ganglia/conf.d
+%{?py2:%dir %{_sysconfdir}/ganglia/conf.d}
 %config(noreplace) %{_sysconfdir}/ganglia/gmond.conf
-%config(noreplace) %{_sysconfdir}/ganglia/conf.d/*.conf
-%exclude %{_sysconfdir}/ganglia/conf.d/modpython.conf
+%{?py2:%config(noreplace) %{_sysconfdir}/ganglia/conf.d/*.conf}
+%{?py2:%exclude %{_sysconfdir}/ganglia/conf.d/modpython.conf}
 
+%if 0%{?py2}
 %files -n python2-ganglia-gmond
 %dir %{_libdir}/ganglia/python_modules/
 %{_libdir}/ganglia/python_modules/*.py*
 %{_libdir}/ganglia/modpython.so*
 %config(noreplace) %{_sysconfdir}/ganglia/conf.d/*.pyconf*
 %config(noreplace) %{_sysconfdir}/ganglia/conf.d/modpython.conf
+%endif
 
 %files devel
 %{_bindir}/ganglia-config
@@ -375,6 +389,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Wed Aug 14 2019 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-27
+- Drop Python 2 stuff in newer distros
+
 * Tue Aug 13 2019 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-26
 - Fix deps
 
