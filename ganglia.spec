@@ -4,14 +4,18 @@
 %global systemd         1
 %global _hardened_build 1
 
-%if 0%{?fedora} < 31 || 0%{?rhel} < 8
+%if 0%{?fedora} && 0%{?fedora} < 31
+%global py2             1
+%endif
+
+%if 0%{?rhel} && 0%{?rhel} < 8
 %global py2             1
 %endif
 
 Summary:            Distributed Monitoring System
 Name:               ganglia
 Version:            %{gangver}
-Release:            27%{?dist}
+Release:            28%{?dist}
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
 Source0:            http://downloads.sourceforge.net/sourceforge/ganglia/ganglia-%{version}.tar.gz
@@ -389,6 +393,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Sun Aug 18 2019 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-28
+- Fix conditionals
+
 * Wed Aug 14 2019 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-27
 - Drop Python 2 stuff in newer distros
 
