@@ -1,5 +1,5 @@
 %global gangver     3.7.2
-%global webver      3.7.2
+%global webver      3.7.5
 
 %global systemd         1
 %global _hardened_build 1
@@ -15,11 +15,11 @@
 Summary:            Distributed Monitoring System
 Name:               ganglia
 Version:            %{gangver}
-Release:            29%{?dist}
+Release:            30%{?dist}
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
 Source0:            http://downloads.sourceforge.net/sourceforge/ganglia/ganglia-%{version}.tar.gz
-Source1:            http://downloads.sourceforge.net/project/ganglia/ganglia-web/%{webver}/ganglia-web-%{webver}.tar.gz
+Source1:            https://github.com/ganglia/ganglia-web/archive/%{webver}/ganglia-web-%{webver}.tar.gz
 Source2:            gmond.service
 Source3:            gmetad.service
 Source4:            ganglia-httpd24.conf.d
@@ -29,6 +29,7 @@ Patch0:             ganglia-web-3.7.2-path.patch
 Patch1:             ganglia-3.7.2-apache.patch
 Patch2:             ganglia-3.7.2-sflow.patch
 Patch3:             ganglia-3.7.2-tirpc-hack.patch
+Patch4:             ganglia-web-5ee6b7.patch
 %if 0%{?systemd}
 BuildRequires:      systemd
 %endif
@@ -156,6 +157,7 @@ install -m 0644 %{SOURCE3} gmetad/gmetad.service.in
 mv ganglia-web-%{webver} web
 pushd web
 %patch0 -p1
+%patch4 -p1
 popd
 
 %build
@@ -168,6 +170,7 @@ libtoolize --automake --copy
 automake --add-missing --copy --foreign
 autoconf -f || exit 1
 %endif
+export CFLAGS="%{optflags} -fcommon"
 %configure \
     --enable-setuid=ganglia \
     --enable-setgid=ganglia \
@@ -393,6 +396,10 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Sat Feb 01 2020 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-30
+- Update to ganglia-web 3.7.5 + latest from git
+- Add hack to fix GCC10 build issue
+
 * Tue Jan 28 2020 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-29
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_32_Mass_Rebuild
 

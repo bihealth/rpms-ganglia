@@ -1,5 +1,14 @@
+From 7ab35273917c5e6a9fa3d528053d146e32013def Mon Sep 17 00:00:00 2001
+From: Terje Rosten <terje.rosten@ntnu.no>
+Date: Sun, 2 Feb 2020 09:58:43 +0100
+Subject: [PATCH] Fix paths
+
+---
+ Makefile | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
 diff --git a/Makefile b/Makefile
-index cdba3b1..c6f6602 100644
+index 2d04cd9..7a6d5fd 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -2,10 +2,10 @@
@@ -15,13 +24,16 @@ index cdba3b1..c6f6602 100644
  
  # Gweb statedir (where conf dir and Dwoo templates dir are stored)
  GWEB_STATEDIR = /var/lib/ganglia-web
-@@ -53,8 +53,7 @@ install:	dist-dir
+@@ -86,8 +86,7 @@ install:	dist-dir
  	mkdir -p $(DESTDIR)/$(GWEB_STATEDIR) && \
  	rsync -a $(DIST_DIR)/conf $(DESTDIR)/$(GWEB_STATEDIR) && \
  	mkdir -p $(DESTDIR)/$(GDESTDIR) && \
 -	rsync --exclude "conf" -a $(DIST_DIR)/* $(DESTDIR)/$(GDESTDIR) && \
--	chown -R $(APACHE_USER):$(APACHE_USER) $(DESTDIR)/$(GWEB_STATEDIR)
+-	chown -R $(APACHE_USER):$(APACHE_GROUP) $(DESTDIR)/$(GWEB_STATEDIR)
 +	rsync --exclude "conf" -a $(DIST_DIR)/* $(DESTDIR)/$(GDESTDIR)
  
  dist-gzip:	dist-dir
  	if [ -f $(DIST_TARBALL) ]; then \
+-- 
+2.24.1
+

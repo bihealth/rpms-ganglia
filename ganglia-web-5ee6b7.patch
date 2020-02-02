@@ -1,0 +1,132 @@
+diff --git a/conf_default.php.in b/conf_default.php.in
+index 9efa9ef..f7602cd 100644
+--- a/conf_default.php.in
++++ b/conf_default.php.in
+@@ -135,6 +135,7 @@ $conf['cpu_gnice_color'] = "fff261";
+ # Colors for the MEMORY report graph
+ #
+ $conf['mem_used_color'] = "5555cc";
++$conf['mem_available_color'] = "2030F4";
+ $conf['mem_shared_color'] = "0000aa";
+ $conf['mem_cached_color'] = "33cc33";
+ $conf['mem_slab_color'] = "66e533";
+diff --git a/functions.php b/functions.php
+index be9fa4a..afbb586 100644
+--- a/functions.php
++++ b/functions.php
+@@ -1121,8 +1121,8 @@ function build_aggregate_graph_config ($graph_type,
+                                        $line_width,
+                                        $hreg,
+                                        $mreg,
+-                                       $glegend,
+-                                       $exclude_host_from_legend_label,
++                                       $glegend = NULL,
++                                       $exclude_host_from_legend_label = false,
+                                        $sortit = true) {
+ 
+   global $conf, $index_array, $hosts, $grid, $clusters, $debug, $metrics;
+diff --git a/graph.d/mem_report.php b/graph.d/mem_report.php
+index d443965..58d167d 100644
+--- a/graph.d/mem_report.php
++++ b/graph.d/mem_report.php
+@@ -48,6 +48,8 @@ function graph_mem_report ( &$rrdtool_graph ) {
+     $bmem_slab_defs = '';
+     $bmem_buffers_defs = '';
+     $bmem_used_cdef = "CDEF:'bmem_used'='bmem_total','bmem_free',-,'bmem_cached',-";
++    $bmem_available_defs = '';
++    $bmem_realused_cdef = '';
+ 
+     if (file_exists("$rrd_dir/mem_shared.rrd")) {
+        $bmem_used_cdef .= ",'bmem_shared',UN,0,'bmem_shared',IF,-";
+@@ -67,6 +69,12 @@ function graph_mem_report ( &$rrdtool_graph ) {
+            ."CDEF:'bmem_buffers'=mem_buffers,1024,* ";
+     }
+ 
++    if (file_exists("$rrd_dir/mem_available.rrd")) {
++       $bmem_realused_cdef = "CDEF:'bmem_realused'='bmem_total','bmem_available',- ";
++       $bmem_available_defs = "DEF:'mem_available'='${rrd_dir}/mem_available.rrd':'sum':AVERAGE "
++           ."CDEF:'bmem_available'=mem_available,1024,* ";
++    }
++
+     $series = "DEF:'mem_total'='${rrd_dir}/mem_total.rrd':'sum':AVERAGE "
+         ."CDEF:'bmem_total'=mem_total,1024,* "
+         .$bmem_shared_defs
+@@ -76,6 +84,8 @@ function graph_mem_report ( &$rrdtool_graph ) {
+         ."CDEF:'bmem_cached'=mem_cached,1024,* "
+         .$bmem_slab_defs
+         .$bmem_buffers_defs
++        .$bmem_available_defs
++        .$bmem_realused_cdef
+         ."$bmem_used_cdef "
+         ."AREA:'bmem_used'#${conf['mem_used_color']}:'Use${rmspace}' ";
+ 
+@@ -188,6 +198,22 @@ function graph_mem_report ( &$rrdtool_graph ) {
+ 	}
+     }
+ 
++    if (file_exists("$rrd_dir/mem_available.rrd")) {
++        $series .= "LINE2:'bmem_realused'#${conf['mem_available_color']}:'Avail${rmspace}' ";
++
++        if ( $conf['graphreport_stats'] ) {
++            $series .= "CDEF:available_pos=bmem_available,0,INF,LIMIT "
++                    . "VDEF:available_last=available_pos,LAST "
++                    . "VDEF:available_min=available_pos,MINIMUM " 
++                    . "VDEF:available_avg=available_pos,AVERAGE " 
++                    . "VDEF:available_max=available_pos,MAXIMUM " 
++                    . "GPRINT:'available_last':' ${space1}Now\:%6.1lf%s' "
++                    . "GPRINT:'available_min':'${space1}Min\:%6.1lf%s${eol1}' "
++                    . "GPRINT:'available_avg':'${space2}Avg\:%6.1lf%s' "
++                    . "GPRINT:'available_max':'${space1}Max\:%6.1lf%s\\l' ";
++        }
++    }
++
+     $series .= "LINE2:'bmem_total'#${conf['cpu_num_color']}:'Total${rmspace}' ";
+ 
+     if ( $conf['graphreport_stats'] ) {
+diff --git a/header.php b/header.php
+index 91af0a2..729fe27 100644
+--- a/header.php
++++ b/header.php
+@@ -263,7 +263,7 @@ if ($initgrid or $gridwalk)
+       # Use cookie so we dont have to pass gridstack around within this site.
+       # Cookie values are automatically urlencoded. Expires in a day.
+       if ( !isset($_COOKIE["gs"]) or $_COOKIE["gs"] != $gridstack_str )
+-            setcookie("gs", $gridstack_str, time() + 86400);
++            setcookie("gs", $gridstack_str, time() + 86400, NULL, NULL, true, true);
+    }
+ 
+ # Invariant: back pointer is second-to-last element of gridstack. Grid stack
+diff --git a/lib/GangliaAuth.php b/lib/GangliaAuth.php
+index 4a4d1da..01ca10d 100644
+--- a/lib/GangliaAuth.php
++++ b/lib/GangliaAuth.php
+@@ -82,14 +82,14 @@ class GangliaAuth {
+ 
+   // this is how a user 'logs in'.
+   public function setAuthCookie($user, $group=null) {
+-    setcookie('ganglia_auth', json_encode( array('user'=>$user, 'group'=>$group, 'token'=>$this->getAuthToken($user)) ) );
++    setcookie('ganglia_auth', json_encode( array('user'=>$user, 'group'=>$group, 'token'=>$this->getAuthToken($user)) ), NULL, NULL, NULL, true, true );
+     $this->user = $user;
+     $this->group = $group;
+     $this->tokenIsValid = true;
+   }
+ 
+   public function destroyAuthCookie() {
+-    setcookie('ganglia_auth', '', time());
++    setcookie('ganglia_auth', '', time(), NULL, NULL, true, true);
+     self::$auth = null;
+   }
+ 
+diff --git a/templates/default/cluster_host_metric_graphs.tpl b/templates/default/cluster_host_metric_graphs.tpl
+index dbd80ab..95bc8aa 100644
+--- a/templates/default/cluster_host_metric_graphs.tpl
++++ b/templates/default/cluster_host_metric_graphs.tpl
+@@ -42,7 +42,7 @@
+       {/foreach}
+     {/if}
+   {/if}
+-  {if $index % $hostcols == 0}
++  {if $index % max(1, $hostcols) == 0}
+     </tr><tr>
+   {/if}
+   {math "$index + 1" assign="index"}
