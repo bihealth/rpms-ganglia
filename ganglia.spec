@@ -15,7 +15,7 @@
 Summary:            Distributed Monitoring System
 Name:               ganglia
 Version:            %{gangver}
-Release:            30%{?dist}
+Release:            31%{?dist}
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
 Source0:            http://downloads.sourceforge.net/sourceforge/ganglia/ganglia-%{version}.tar.gz
@@ -65,11 +65,6 @@ Version:            %{webver}
 Requires:           rrdtool
 Requires:           php
 Requires:           php-gd
-%if 0%{?fedora} > 29 || 0%{?rhel} > 7
-Requires:           php-zendframework
-%else
-Requires:           php-ZendFramework
-%endif
 Requires:           %{name}-gmetad = %{gangver}-%{release}
 %description        web
 This package provides a web frontend to display the XML tree published
@@ -264,10 +259,6 @@ rm -rf %{buildroot}%{_datadir}/%{name}/{README,TODO,AUTHORS,COPYING}
 ## House cleaning
 rm -f %{buildroot}%{_libdir}/*.la
 
-## Use system php-ZendFramework
-rm -rf %{buildroot}/usr/share/ganglia/lib/Zend
-ln -s /usr/share/php/Zend %{buildroot}/usr/share/ganglia/lib/Zend
-
 # Remove execute bit
 chmod 0644 %{buildroot}%{_datadir}/%{name}/header.php
 %{?py2:chmod 0644 %{buildroot}%{_libdir}/%{name}/python_modules/*.py}
@@ -323,10 +314,13 @@ fi
 
 %endif # systemd
 
-%post web
-if [ ! -L /usr/share/ganglia/lib/Zend ]; then
-  ln -s /usr/share/php/Zend /usr/share/ganglia/lib/Zend
-fi
+# https://fedoraproject.org/wiki/Packaging:Directory_Replacement#Scriptlet_to_replace_a_symlink_to_a_directory_with_a_directory
+%pretrans web -p <lua>
+path = "/usr/share/ganglia/lib/Zend"
+st = posix.stat(path)
+if st and st.type == "link" then
+  os.remove(path)
+end
 
 %files
 %license COPYING
@@ -396,6 +390,9 @@ fi
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Mon Feb 10 2020 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-31
+- Bring Zend back to fix rhbz#1797111 and rhbz#1734255
+
 * Sat Feb 01 2020 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-30
 - Update to ganglia-web 3.7.5 + latest from git
 - Add hack to fix GCC10 build issue
