@@ -15,7 +15,7 @@
 Summary:            Distributed Monitoring System
 Name:               ganglia
 Version:            %{gangver}
-Release:            32%{?dist}
+Release:            33%{?dist}
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
 Source0:            http://downloads.sourceforge.net/sourceforge/ganglia/ganglia-%{version}.tar.gz
@@ -82,7 +82,7 @@ Requires(postun):   systemd
 Requires(post):     /sbin/chkconfig
 Requires(preun):    /sbin/chkconfig
 Requires(preun):    /sbin/service
-%endif #systemd
+%endif
 %description        gmetad
 Ganglia is a scalable, real-time monitoring and execution environment
 with all execution requests and statistics expressed in an open
@@ -102,7 +102,7 @@ Requires(postun):   systemd
 Requires(post):     /sbin/chkconfig
 Requires(preun):    /sbin/chkconfig
 Requires(preun):    /sbin/service
-%endif #systemd
+%endif
 %description        gmond
 Ganglia is a scalable, real-time monitoring and execution environment
 with all execution requests and statistics expressed in an open
@@ -210,7 +210,7 @@ install -Dp -m 0644 %{SOURCE3} %{buildroot}%{_unitdir}/gmetad.service
 %else
 install -Dp -m 0755 gmond/gmond.init %{buildroot}%{_sysconfdir}/init.d/gmond
 install -Dp -m 0755 gmetad/gmetad.init %{buildroot}%{_sysconfdir}/init.d/gmetad
-%endif # systemd
+%endif
 
 ## Build default gmond.conf from gmond using the '-t' flag
 LD_LIBRARY_PATH=lib/.libs gmond/gmond -t | %{__perl} -pe 's|nobody|ganglia|g' \
@@ -312,7 +312,7 @@ if [ "$1" = 0 ]; then
   /sbin/chkconfig --del gmond
 fi
 
-%endif # systemd
+%endif
 
 # https://fedoraproject.org/wiki/Packaging:Directory_Replacement#Scriptlet_to_replace_a_symlink_to_a_directory_with_a_directory
 %pretrans web -p <lua>
@@ -390,6 +390,9 @@ end
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Thu Oct 08 2020 Germano Massullo <germano.massullo@gmail.com> - 3.7.2-33
+- removed all occurrencies of "# systemd" after %%endif since they are not allowed.
+
 * Mon Jul 27 2020 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-32
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_33_Mass_Rebuild
 
