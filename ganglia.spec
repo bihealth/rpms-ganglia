@@ -54,6 +54,7 @@ BuildRequires:      rrdtool-devel
 BuildRequires:      rsync
 BuildRequires:      /usr/bin/pod2man
 BuildRequires:      /usr/bin/pod2html
+BuildRequires: make
 %description
 Ganglia is a scalable, real-time monitoring and execution environment
 with all execution requests and statistics expressed in an open
