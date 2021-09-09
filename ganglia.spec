@@ -4,10 +4,6 @@
 %global systemd         1
 %global _hardened_build 1
 
-%if 0%{?fedora} && 0%{?fedora} < 31
-%global py2             1
-%endif
-
 %if 0%{?rhel} && 0%{?rhel} < 8
 %global py2             1
 %endif
@@ -48,13 +44,13 @@ BuildRequires:      libart_lgpl-devel
 BuildRequires:      libconfuse-devel
 BuildRequires:      libmemcached-devel
 BuildRequires:      libpng-devel
+BuildRequires:      make
 BuildRequires:      pcre-devel
 %{?py2:BuildRequires:      python2-devel}
 BuildRequires:      rrdtool-devel
 BuildRequires:      rsync
 BuildRequires:      /usr/bin/pod2man
 BuildRequires:      /usr/bin/pod2html
-BuildRequires: make
 %description
 Ganglia is a scalable, real-time monitoring and execution environment
 with all execution requests and statistics expressed in an open
