@@ -11,7 +11,7 @@
 Summary:            Distributed Monitoring System
 Name:               ganglia
 Version:            %{gangver}
-Release:            36%{?dist}
+Release:            37%{?dist}
 License:            BSD
 URL:                http://ganglia.sourceforge.net/
 Source0:            http://downloads.sourceforge.net/sourceforge/ganglia/ganglia-%{version}.tar.gz
@@ -37,6 +37,7 @@ BuildRequires:      automake
 BuildRequires:      libtool
 %endif
 BuildRequires:      apr-devel >= 1
+BuildRequires:      cyrus-sasl-devel
 BuildRequires:      expat-devel
 BuildRequires:      freetype-devel
 BuildRequires:      gcc
@@ -387,6 +388,9 @@ end
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Thu Sep 09 2021 Terje Rosten <terje.rosten@ntnu.no> - 3.7.2-37
+- Need sasl bits to build
+
 * Wed Jul 21 2021 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-36
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_35_Mass_Rebuild
 
