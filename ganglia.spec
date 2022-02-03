@@ -4,7 +4,7 @@
 %global systemd         1
 %global _hardened_build 1
 
-%if 0%{?rhel} && 0%{?rhel} < 8
+%if 0%{?rhel} && 0%{?rhel} < 9
 %global py2             1
 %endif
 
@@ -388,6 +388,9 @@ end
 %dir %attr(0755,apache,apache) %{_localstatedir}/lib/%{name}-web/dwoo/compiled
 
 %changelog
+* Thu Feb 03 2022 Manuel Holtgrewe <manuel.holtgrewe@bih-charite.de> - 3.7.2-39
+- Adding back python2 support.
+
 * Thu Jan 20 2022 Fedora Release Engineering <releng@fedoraproject.org> - 3.7.2-38
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_36_Mass_Rebuild
 
